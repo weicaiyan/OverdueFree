@@ -1,22 +1,15 @@
 spring:
   datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/overdue_free?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
     username: overduefree
     password: overduefree_pwd
   flyway:
     enabled: true
     locations: classpath:db/migration
-  servlet:
-    multipart:
-      max-file-size: 500MB
-      max-request-size: 520MB
+    baseline-on-migrate: true
 
-server:
-  port: 8080
-
-app:
-  upload:
-    base-dir: C:/OverdueFree/uploads
-    public-prefix: /uploads
-  init:
-    boss-password: boss123456
+logging:
+  level:
+    root: info
+    com.overduefree: debug

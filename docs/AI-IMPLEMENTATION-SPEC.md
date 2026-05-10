@@ -18,6 +18,8 @@
 8. 不要擅自改技术栈：后端必须 Java + Spring Boot + JDK 11 + Maven + MySQL。
 9. 不要将上传文件放进代码目录内，必须使用外部可配置目录。
 10. 不要把默认密码明文硬编码在 Java 代码里。
+11. 不要使用 JPA/Hibernate 作为主要持久层，后端数据库访问必须使用 MyBatis-Plus。
+12. 不要使用 UTC 或服务器本地默认时区作为业务时间标准，整个项目统一使用北京时间 `Asia/Shanghai`。
 
 ### 0.2 必须遵守
 
@@ -31,6 +33,7 @@
 8. 用户只登录未提交资料，也必须能在后台看到并导出。
 9. 用户查看企业微信二维码必须记录行为。
 10. 后台 Excel 导出必须支持筛选和自定义字段。
+11. Spring Boot、MySQL、JDBC、JSON 序列化、数据库时间字段、日志展示都必须统一为北京时间。
 
 ## 1. 项目基本信息
 
@@ -170,7 +173,7 @@ git merge --no-ff <branch-name>
 - Spring Boot：2.7.x
 - 构建：Maven
 - 数据库：MySQL 8
-- ORM：MyBatis-Plus
+- ORM：MyBatis-Plus，必须使用，不允许改为 JPA/Hibernate 作为主要持久层
 - 数据库迁移：Flyway
 - Excel：EasyExcel
 - 密码加密：Spring Security Crypto BCrypt
@@ -244,6 +247,44 @@ git merge --no-ff <branch-name>
 
 ## 5. 本地环境与端口
 
+### 5.1 全项目时区标准
+
+整个项目必须统一使用北京时间。
+
+硬性要求：
+
+1. Java 应用默认时区：`Asia/Shanghai`。
+2. Spring Boot JSON 序列化时区：`Asia/Shanghai`。
+3. JDBC 连接参数：`serverTimezone=Asia/Shanghai`。
+4. Docker MySQL 环境变量：`TZ=Asia/Shanghai`。
+5. MySQL 启动参数：`--default-time-zone=+08:00`。
+6. 数据库中所有业务时间字段按北京时间写入和读取。
+7. 前端展示后端时间时，按后端返回的北京时间展示，不自行转换为 UTC。
+8. Excel 导出中的时间也必须是北京时间。
+
+后端启动类建议显式设置：
+
+```java
+@SpringBootApplication
+public class OverdueFreeApplication {
+    public static void main(String[] args) {
+        TimeZone.setDefault(TimeZone.getTimeZone("Asia/Shanghai"));
+        SpringApplication.run(OverdueFreeApplication.class, args);
+    }
+}
+```
+
+后端配置必须包含：
+
+```yaml
+spring:
+  jackson:
+    time-zone: Asia/Shanghai
+    date-format: yyyy-MM-dd HH:mm:ss
+```
+
+### 5.2 默认端口
+
 默认端口：
 
 | 服务 | 端口 |
@@ -290,6 +331,17 @@ spring:
     url: jdbc:mysql://localhost:3306/overdue_free?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
     username: overduefree
     password: overduefree_pwd
+```
+
+MyBatis-Plus 配置建议：
+
+```yaml
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      id-type: auto
 ```
 
 ## 6. 后端工程设计
@@ -393,6 +445,9 @@ com.overduefree
 - 所有表使用 InnoDB
 - 时间字段使用 `datetime`
 - 主键使用 `bigint unsigned auto_increment`
+- 所有 `created_at`、`updated_at`、`login_at`、`expires_at`、`publish_time` 等时间字段均按北京时间读写
+- 不使用数据库 UTC 默认值作为业务时间，不在前端做 UTC/本地时区二次转换
+- MyBatis-Plus 实体字段使用 `LocalDateTime`，由后端按北京时间序列化为 `yyyy-MM-dd HH:mm:ss`
 
 ### 7.2 枚举约定
 
@@ -1562,12 +1617,15 @@ Authorization: Bearer <token>
 4. 添加全局异常。
 5. 添加 MyBatis-Plus。
 6. 添加初始化数据逻辑。
+7. 显式配置并验证全项目北京时间。
 
 验收：
 
 1. 后端启动后自动建表。
 2. 默认老板账号创建成功。
 3. 默认配置和素材位创建成功。
+4. MyBatis-Plus Mapper 可正常读写一条测试数据。
+5. 数据库 `now()`、后端 `LocalDateTime.now()`、接口返回时间、Excel 导出时间均按北京时间理解和展示。
 
 ### 14.3 第三阶段：认证
 
@@ -1795,6 +1853,8 @@ npm run dev
 7. 更新必要 README 或文档。
 8. 输出测试结果。
 9. 等用户确认后再合并到 `master`。
+10. 涉及数据库读写的功能必须使用 MyBatis-Plus。
+11. 涉及时间展示、存储、导出的功能必须确认使用北京时间。
 
 ## 18. 遇到不确定时的默认策略
 
@@ -1814,10 +1874,12 @@ npm run dev
 3. 需要购买服务器、域名、云存储。
 4. 需要改后端技术栈。
 5. 需要改数据库类型。
-6. 需要把功能分支合并进 `master`。
-7. 需要删除已有数据或上传文件。
-8. 需要写正式公司名称、备案号、隐私协议。
-9. 需要处理真实用户隐私数据导出到外部平台。
+6. 需要把 MyBatis-Plus 替换为其他主要持久层框架。
+7. 需要把北京时间改为 UTC 或其他时区。
+8. 需要把功能分支合并进 `master`。
+9. 需要删除已有数据或上传文件。
+10. 需要写正式公司名称、备案号、隐私协议。
+11. 需要处理真实用户隐私数据导出到外部平台。
 
 ## 20. 最小演示闭环
 

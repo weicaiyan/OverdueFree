@@ -29,6 +29,14 @@ OverdueFree/
 - Node.js 18+
 - Docker Desktop
 
+## 硬性约束
+
+- 后端数据库访问必须使用 MyBatis-Plus，不使用 JPA/Hibernate 作为主要持久层。
+- 整个项目统一使用北京时间 `Asia/Shanghai`。
+- MySQL Docker 使用 `TZ=Asia/Shanghai` 和 `--default-time-zone=+08:00`。
+- JDBC 连接使用 `serverTimezone=Asia/Shanghai`。
+- 后端 JSON 时间格式使用 `yyyy-MM-dd HH:mm:ss`。
+
 ## 本地启动
 
 ### 1. 启动 MySQL
@@ -46,6 +54,8 @@ mvn spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
 后端启动后自动建表并初始化数据。
+
+如果你已经手动启动了 `overduefree-mysql` 容器，也可以直接跳过 Docker 启动步骤。
 
 ### 3. 启动客户 H5
 
@@ -81,6 +91,8 @@ npm run dev
 ## 上传目录
 
 文件上传目录：`C:/OverdueFree/uploads/`
+
+上传文件不放进代码仓库，后续由后端配置项控制访问路径。
 
 ## 常见问题
 

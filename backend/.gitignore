@@ -1,8 +1,5 @@
 target/
-!.mvn/wrapper/maven-wrapper.jar
-*.class
-*.jar
 *.log
 .idea/
 *.iml
-.vscode/
+.DS_Store
