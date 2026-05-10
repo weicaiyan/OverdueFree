@@ -53,20 +53,19 @@ public class AdminLeadServiceImpl implements AdminLeadService {
     @Override
     public PageResult<LeadListItem> listLeads(AdminLeadQuery query) {
         AdminLeadQuery normalizedQuery = normalizeQuery(query);
-        List<LeadListItem> rows = new ArrayList<>();
-        if (!AdminLeadQuery.TYPE_LOGIN_ONLY.equals(normalizedQuery.getLeadType())) {
-            rows.addAll(leadAdminMapper.selectSubmittedRows(normalizedQuery));
-        }
-        if (shouldIncludeLoginOnlyRows(normalizedQuery)) {
-            rows.addAll(leadAdminMapper.selectLoginOnlyRows(normalizedQuery));
-        }
-        rows.sort(Comparator.comparing(this::resolveSortTime, Comparator.nullsLast(Comparator.reverseOrder())));
+        List<LeadListItem> rows = selectRows(normalizedQuery);
 
         long total = rows.size();
         long start = Math.min((normalizedQuery.getPage() - 1) * normalizedQuery.getPageSize(), total);
         long end = Math.min(start + normalizedQuery.getPageSize(), total);
         List<LeadListItem> pageRows = rows.subList((int) start, (int) end);
         return new PageResult<>(pageRows, normalizedQuery.getPage(), normalizedQuery.getPageSize(), total);
+    }
+
+    @Override
+    public List<LeadListItem> listLeadsForExport(AdminLeadQuery query) {
+        AdminLeadQuery normalizedQuery = normalizeQuery(query);
+        return selectRows(normalizedQuery);
     }
 
     @Override
@@ -116,6 +115,18 @@ public class AdminLeadServiceImpl implements AdminLeadService {
             && !StringUtils.hasText(query.getDebtType())
             && query.getMinDebtAmount() == null
             && query.getMaxDebtAmount() == null;
+    }
+
+    private List<LeadListItem> selectRows(AdminLeadQuery query) {
+        List<LeadListItem> rows = new ArrayList<>();
+        if (!AdminLeadQuery.TYPE_LOGIN_ONLY.equals(query.getLeadType())) {
+            rows.addAll(leadAdminMapper.selectSubmittedRows(query));
+        }
+        if (shouldIncludeLoginOnlyRows(query)) {
+            rows.addAll(leadAdminMapper.selectLoginOnlyRows(query));
+        }
+        rows.sort(Comparator.comparing(this::resolveSortTime, Comparator.nullsLast(Comparator.reverseOrder())));
+        return rows;
     }
 
     private LocalDateTime resolveSortTime(LeadListItem row) {

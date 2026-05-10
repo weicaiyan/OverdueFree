@@ -17,7 +17,8 @@ import java.util.TimeZone;
     "com.overduefree.module.caseitem.mapper",
     "com.overduefree.module.configitem.mapper",
     "com.overduefree.module.customer.mapper",
-    "com.overduefree.module.lead.mapper"
+    "com.overduefree.module.lead.mapper",
+    "com.overduefree.module.operationlog.mapper"
 })
 @SpringBootApplication
 public class OverdueFreeApplication {
