@@ -1,9 +1,72 @@
 {
   "pages": [
     {
+      "path": "pages/login/index",
+      "style": {
+        "navigationBarTitleText": "手机号登录",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/home/index",
       "style": {
         "navigationBarTitleText": "逾期上岸",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/cases/index",
+      "style": {
+        "navigationBarTitleText": "成功案例",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/cases/detail",
+      "style": {
+        "navigationBarTitleText": "案例详情",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/articles/index",
+      "style": {
+        "navigationBarTitleText": "教程资讯",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/articles/detail",
+      "style": {
+        "navigationBarTitleText": "资讯详情",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/profile/index",
+      "style": {
+        "navigationBarTitleText": "个人中心",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/ai-chat/index",
+      "style": {
+        "navigationBarTitleText": "AI债务咨询师",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/plan-form/index",
+      "style": {
+        "navigationBarTitleText": "规划优化债务",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/calculator/index",
+      "style": {
+        "navigationBarTitleText": "网贷利率计算器",
         "navigationStyle": "custom"
       }
     }

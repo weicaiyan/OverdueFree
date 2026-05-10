@@ -1,0 +1,172 @@
+<script setup lang="ts">
+import { ref } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
+import BottomTabs from '../../components/BottomTabs.vue'
+import PageHeader from '../../components/PageHeader.vue'
+import WechatQrModal from '../../components/WechatQrModal.vue'
+import { api } from '../../services/api'
+import { requireLogin } from '../../services/auth'
+import type { HomeData, SuccessCaseItem } from '../../types'
+
+const cases = ref<SuccessCaseItem[]>([])
+const homeData = ref<HomeData>({ assets: {}, serviceSteps: [] })
+const qrVisible = ref(false)
+
+onShow(async () => {
+  if (!(await requireLogin())) {
+    return
+  }
+  loadData()
+})
+
+async function loadData() {
+  try {
+    const [casePage, home] = await Promise.all([api.cases(1, 20), api.home()])
+    cases.value = casePage.list
+    homeData.value = home
+  } catch (error) {
+    uni.showToast({ title: '案例加载失败', icon: 'none' })
+  }
+}
+
+function goDetail(id: number) {
+  uni.navigateTo({ url: `/pages/cases/detail?id=${id}` })
+}
+</script>
+
+<template>
+  <view class="case-page">
+    <PageHeader title="成功案例" />
+    <view class="list">
+      <view v-for="item in cases" :key="item.id" class="case-card">
+        <view class="card-head">
+          <view class="avatar">人</view>
+          <view class="person">
+            <view class="name">{{ item.displayName }}</view>
+            <view class="phone">{{ item.maskedPhone || '号码已脱敏' }}</view>
+          </view>
+          <button class="apply-button" @click="qrVisible = true">我也申请</button>
+        </view>
+        <view class="line" />
+        <view class="info-row">逾期平台：{{ item.overduePlatforms || '待补充' }}</view>
+        <view class="info-row">逾期金额：<text class="amount">{{ item.overdueAmount || 0 }}</text>元</view>
+        <view class="info-row">处理方案：<text class="plan">{{ item.handlingPlan || '人工评估后确认' }}</text></view>
+        <button class="detail-link" @click="goDetail(item.id)">查看详情</button>
+      </view>
+    </view>
+    <button class="fixed-cta" @click="qrVisible = true">领取债务减免延期方案</button>
+    <WechatQrModal
+      :visible="qrVisible"
+      :asset="homeData.assets.wechatQr"
+      source-page="CASES"
+      @close="qrVisible = false"
+    />
+    <BottomTabs active="cases" />
+  </view>
+</template>
+
+<style scoped>
+.case-page {
+  min-height: 100vh;
+  padding: 0 14px 156px;
+  box-sizing: border-box;
+  background: #f4f4f4;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.case-card {
+  padding: 20px;
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+}
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  color: #988aa9;
+  background: #eadbff;
+  font-size: 18px;
+}
+
+.person {
+  flex: 1;
+  margin-left: 12px;
+}
+
+.name {
+  font-size: 18px;
+  color: #999999;
+}
+
+.phone {
+  margin-top: 6px;
+  font-size: 16px;
+  color: #a7a7a7;
+}
+
+.apply-button {
+  width: 94px;
+  height: 46px;
+  border-radius: 24px;
+  color: #ffffff;
+  background: #f75a50;
+  font-size: 15px;
+}
+
+.line {
+  height: 1px;
+  margin: 18px 0;
+  background: #eeeeee;
+}
+
+.info-row {
+  margin-top: 8px;
+  font-size: 16px;
+  color: #999999;
+  line-height: 1.5;
+}
+
+.amount {
+  color: #111111;
+}
+
+.plan {
+  color: #ff9200;
+}
+
+.detail-link {
+  margin-top: 12px;
+  color: #f75a50;
+  font-size: 14px;
+  text-align: left;
+}
+
+.fixed-cta {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: 88px;
+  z-index: 25;
+  height: 58px;
+  border-radius: 30px;
+  color: #ffffff;
+  background: #ef5a4f;
+  font-size: 18px;
+  font-weight: 800;
+}
+</style>
