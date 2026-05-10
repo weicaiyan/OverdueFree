@@ -13,11 +13,12 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @EnableConfigurationProperties({UploadProperties.class, AuthProperties.class})
 public class WebConfig implements WebMvcConfigurer {
 
-    private static final String[] ALLOWED_ORIGINS = {
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://localhost:5174",
-        "http://127.0.0.1:5174"
+    private static final String[] ALLOWED_ORIGIN_PATTERNS = {
+        "http://localhost:[*]",
+        "http://127.0.0.1:[*]",
+        "http://192.168.*.*:[*]",
+        "http://10.*.*.*:[*]",
+        "http://172.*.*.*:[*]"
     };
 
     private final UploadProperties uploadProperties;
@@ -35,7 +36,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/**")
-            .allowedOrigins(ALLOWED_ORIGINS)
+            .allowedOriginPatterns(ALLOWED_ORIGIN_PATTERNS)
             .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
             .allowedHeaders("*")
             .allowCredentials(true)
