@@ -12,7 +12,11 @@ import java.time.LocalDateTime;
 public class OperationLog {
 
     public static final String ACTION_EXPORT_LEADS = "EXPORT_LEADS";
+    public static final String ACTION_CREATE_ADMIN = "CREATE_ADMIN";
+    public static final String ACTION_UPDATE_ADMIN = "UPDATE_ADMIN";
+    public static final String ACTION_RESET_ADMIN_PASSWORD = "RESET_ADMIN_PASSWORD";
     public static final String TARGET_TYPE_LEAD = "LEAD";
+    public static final String TARGET_TYPE_ADMIN_USER = "ADMIN_USER";
 
     @TableId(type = IdType.AUTO)
     private Long id;
