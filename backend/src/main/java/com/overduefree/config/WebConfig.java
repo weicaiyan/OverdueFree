@@ -1,6 +1,5 @@
 package com.overduefree.config;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
@@ -9,16 +8,17 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    @Value("${app.upload.public-prefix:/uploads}")
-    private String uploadPublicPrefix;
+    private final UploadProperties uploadProperties;
 
-    @Value("${app.upload.base-dir:C:/OverdueFree/uploads}")
-    private String uploadBaseDir;
+    public WebConfig(UploadProperties uploadProperties) {
+        this.uploadProperties = uploadProperties;
+    }
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/**")
-                .allowedOriginPatterns("*")
+                .allowedOriginPatterns("http://localhost:5173", "http://127.0.0.1:5173",
+                        "http://localhost:5174", "http://127.0.0.1:5174")
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true)
@@ -27,7 +27,7 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler(uploadPublicPrefix + "/**")
-                .addResourceLocations("file:" + uploadBaseDir + "/");
+        registry.addResourceHandler(uploadProperties.getPublicPrefix() + "/**")
+                .addResourceLocations("file:" + uploadProperties.getBaseDir() + "/");
     }
 }

@@ -5,9 +5,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ApiResponse<T> {
 
-    private int code;
-    private String message;
-    private T data;
+    private final int code;
+    private final String message;
+    private final T data;
 
     private ApiResponse(int code, String message, T data) {
         this.code = code;

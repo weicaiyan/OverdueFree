@@ -8,12 +8,19 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Component
 public class DataInitializer implements CommandLineRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DataInitializer.class);
+    private static final String STATUS_ACTIVE = "ACTIVE";
+    private static final String STATUS_DRAFT = "DRAFT";
+    private static final String ROLE_BOSS = "BOSS";
+    private static final String CONFIG_KEY_EXPIRE_DAYS = "customer_login_expire_days";
+    private static final String CONFIG_VALUE_EXPIRE_DAYS = "7";
+
     private static final String[] FIXED_ASSET_KEYS = {
         "HOME_VIDEO", "HOME_VIDEO_COVER", "AI_CONSULT_BANNER",
         "LOAN_CALCULATOR_BANNER", "DEBT_PLAN_BANNER", "WECHAT_QR"
@@ -25,13 +32,13 @@ public class DataInitializer implements CommandLineRunner {
 
     private final JdbcTemplate jdbc;
     private final PasswordEncoder passwordEncoder;
+    private final String bossPassword;
 
-    @Value("${app.init.boss-password:boss123456}")
-    private String bossPassword;
-
-    public DataInitializer(JdbcTemplate jdbc, PasswordEncoder passwordEncoder) {
+    public DataInitializer(JdbcTemplate jdbc, PasswordEncoder passwordEncoder,
+                           @Value("${app.init.boss-password:boss123456}") String bossPassword) {
         this.jdbc = jdbc;
         this.passwordEncoder = passwordEncoder;
+        this.bossPassword = bossPassword;
     }
 
     @Override
@@ -45,21 +52,21 @@ public class DataInitializer implements CommandLineRunner {
 
     private void initSysConfig() {
         Integer count = jdbc.queryForObject(
-            "SELECT COUNT(*) FROM sys_config WHERE config_key = ?", Integer.class, "customer_login_expire_days");
+            "SELECT COUNT(1) FROM sys_config WHERE config_key = ?", Integer.class, CONFIG_KEY_EXPIRE_DAYS);
         if (count != null && count == 0) {
             jdbc.update("INSERT INTO sys_config (config_key, config_value, description) VALUES (?, ?, ?)",
-                "customer_login_expire_days", "7", "客户登录token有效期（天）");
-            log.info("已初始化系统配置: customer_login_expire_days=7");
+                CONFIG_KEY_EXPIRE_DAYS, CONFIG_VALUE_EXPIRE_DAYS, "客户登录token有效期（天）");
+            log.info("已初始化系统配置: {}={}", CONFIG_KEY_EXPIRE_DAYS, CONFIG_VALUE_EXPIRE_DAYS);
         }
     }
 
     private void initBossAdmin() {
-        Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM admin_user", Integer.class);
+        Integer count = jdbc.queryForObject("SELECT COUNT(1) FROM admin_user", Integer.class);
         if (count != null && count == 0) {
             String passwordHash = passwordEncoder.encode(bossPassword);
             jdbc.update(
                 "INSERT INTO admin_user (username, password_hash, display_name, role, status) VALUES (?, ?, ?, ?, ?)",
-                "boss", passwordHash, "老板", "BOSS", "ACTIVE");
+                "boss", passwordHash, "老板", ROLE_BOSS, STATUS_ACTIVE);
             log.info("已创建默认老板账号: boss");
         }
     }
@@ -68,20 +75,20 @@ public class DataInitializer implements CommandLineRunner {
         for (int i = 0; i < FIXED_ASSET_KEYS.length; i++) {
             String assetKey = FIXED_ASSET_KEYS[i];
             Integer count = jdbc.queryForObject(
-                "SELECT COUNT(*) FROM asset_resource WHERE asset_key = ?", Integer.class, assetKey);
+                "SELECT COUNT(1) FROM asset_resource WHERE asset_key = ?", Integer.class, assetKey);
             if (count != null && count == 0) {
                 jdbc.update(
                     "INSERT INTO asset_resource (asset_key, title, status) VALUES (?, ?, ?)",
-                    assetKey, FIXED_ASSET_TITLES[i], "ACTIVE");
+                    assetKey, FIXED_ASSET_TITLES[i], STATUS_ACTIVE);
                 log.info("已初始化素材位: {}", assetKey);
             }
         }
     }
 
     private void initDemoArticles() {
-        Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM article", Integer.class);
+        Integer count = jdbc.queryForObject("SELECT COUNT(1) FROM article", Integer.class);
         if (count != null && count == 0) {
-            LocalDateTime now = LocalDateTime.now();
+            final LocalDateTime now = LocalDateTime.now();
             String[][] articles = {
                 {"债务逾期后如何与平台协商", "了解协商的基本策略和注意事项，避免踩坑", "债务逾期后，很多借款人会感到焦虑和无助。实际上，大多数平台都有协商还款的渠道。第一步是主动联系平台客服，表明还款意愿..."},
                 {"信用卡逾期对征信的影响", "详细解读征信报告中的逾期记录", "信用卡逾期会在个人征信报告中留下不良记录。根据规定，逾期记录会在还清欠款后保留5年..."},
@@ -91,14 +98,14 @@ public class DataInitializer implements CommandLineRunner {
             for (int i = 0; i < articles.length; i++) {
                 jdbc.update(
                     "INSERT INTO article (title, summary, content_text, publish_time, sort_order, status) VALUES (?, ?, ?, ?, ?, ?)",
-                    articles[i][0], articles[i][1], articles[i][2], now, i, "DRAFT");
+                    articles[i][0], articles[i][1], articles[i][2], now, i, STATUS_DRAFT);
             }
             log.info("已初始化{}条演示资讯", articles.length);
         }
     }
 
     private void initDemoCases() {
-        Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM success_case", Integer.class);
+        Integer count = jdbc.queryForObject("SELECT COUNT(1) FROM success_case", Integer.class);
         if (count != null && count == 0) {
             String[][] cases = {
                 {"李先生", "138****1234", "网贷、信用卡", "85000.00", "协商分期60期，减免部分罚息", "张先生因失业导致多平台逾期，通过协商最终达成分期方案..."},
@@ -110,8 +117,8 @@ public class DataInitializer implements CommandLineRunner {
                 jdbc.update(
                     "INSERT INTO success_case (display_name, masked_phone, overdue_platforms, overdue_amount, handling_plan, detail_text, sort_order, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                     cases[i][0], cases[i][1], cases[i][2],
-                    new java.math.BigDecimal(cases[i][3]),
-                    cases[i][4], cases[i][5], i, "DRAFT");
+                    new BigDecimal(cases[i][3]),
+                    cases[i][4], cases[i][5], i, STATUS_DRAFT);
             }
             log.info("已初始化{}条演示案例", cases.length);
         }
