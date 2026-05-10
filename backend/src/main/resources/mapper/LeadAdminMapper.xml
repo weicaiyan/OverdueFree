@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.overduefree.module.lead.mapper.LeadAdminMapper">
+
+    <sql id="eventAggregates">
+        LEFT JOIN (
+            SELECT customer_id, MAX(created_at) AS last_wechat_qr_view_at
+            FROM customer_event
+            WHERE event_type = 'VIEW_WECHAT_QR'
+            GROUP BY customer_id
+        ) qr ON qr.customer_id = c.id
+        LEFT JOIN (
+            SELECT customer_id, event_type, created_at
+            FROM (
+                SELECT
+                    customer_id,
+                    event_type,
+                    created_at,
+                    ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY created_at DESC, id DESC) AS row_num
+                FROM customer_event
+            ) latest_event
+            WHERE row_num = 1
+        ) ev ON ev.customer_id = c.id
+    </sql>
+
+    <select id="selectSubmittedRows" resultType="com.overduefree.module.lead.dto.LeadListItem">
+        SELECT
+            'SUBMITTED' AS row_type,
+            c.id AS customer_id,
+            l.id AS lead_id,
+            c.phone AS phone,
+            l.surname AS surname,
+            l.region AS region,
+            l.debt_amount AS debt_amount,
+            l.debt_type AS debt_type,
+            l.source AS source,
+            c.first_login_at AS first_login_at,
+            l.created_at AS lead_created_at,
+            CASE WHEN qr.last_wechat_qr_view_at IS NULL THEN 0 ELSE 1 END AS viewed_wechat_qr,
+            qr.last_wechat_qr_view_at AS last_wechat_qr_view_at,
+            ev.event_type AS latest_event_type,
+            ev.created_at AS latest_event_at,
+            history.history_count AS history_count
+        FROM lead_record l
+        INNER JOIN customer c ON c.id = l.customer_id
+        <include refid="eventAggregates"/>
+        LEFT JOIN (
+            SELECT customer_id, COUNT(*) AS history_count
+            FROM lead_record
+            GROUP BY customer_id
+        ) history ON history.customer_id = c.id
+        WHERE c.status = 'ACTIVE'
+        <if test="query.keyword != null and query.keyword != ''">
+            AND (c.phone LIKE CONCAT('%', #{query.keyword}, '%')
+                OR l.surname LIKE CONCAT('%', #{query.keyword}, '%'))
+        </if>
+        <if test="query.region != null and query.region != ''">
+            AND l.region = #{query.region}
+        </if>
+        <if test="query.debtType != null and query.debtType != ''">
+            AND l.debt_type = #{query.debtType}
+        </if>
+        <if test="query.minDebtAmount != null">
+            AND l.debt_amount &gt;= #{query.minDebtAmount}
+        </if>
+        <if test="query.maxDebtAmount != null">
+            AND l.debt_amount &lt;= #{query.maxDebtAmount}
+        </if>
+        <if test="query.viewedWechatQr != null">
+            <choose>
+                <when test="query.viewedWechatQr">
+                    AND qr.last_wechat_qr_view_at IS NOT NULL
+                </when>
+                <otherwise>
+                    AND qr.last_wechat_qr_view_at IS NULL
+                </otherwise>
+            </choose>
+        </if>
+        <if test="query.startTime != null">
+            AND l.created_at &gt;= #{query.startTime}
+        </if>
+        <if test="query.endTime != null">
+            AND l.created_at &lt;= #{query.endTime}
+        </if>
+    </select>
+
+    <select id="selectLoginOnlyRows" resultType="com.overduefree.module.lead.dto.LeadListItem">
+        SELECT
+            'LOGIN_ONLY' AS row_type,
+            c.id AS customer_id,
+            NULL AS lead_id,
+            c.phone AS phone,
+            NULL AS surname,
+            NULL AS region,
+            NULL AS debt_amount,
+            NULL AS debt_type,
+            NULL AS source,
+            c.first_login_at AS first_login_at,
+            NULL AS lead_created_at,
+            CASE WHEN qr.last_wechat_qr_view_at IS NULL THEN 0 ELSE 1 END AS viewed_wechat_qr,
+            qr.last_wechat_qr_view_at AS last_wechat_qr_view_at,
+            ev.event_type AS latest_event_type,
+            ev.created_at AS latest_event_at,
+            0 AS history_count
+        FROM customer c
+        <include refid="eventAggregates"/>
+        LEFT JOIN lead_record l ON l.customer_id = c.id
+        WHERE c.status = 'ACTIVE'
+            AND l.id IS NULL
+        <if test="query.keyword != null and query.keyword != ''">
+            AND c.phone LIKE CONCAT('%', #{query.keyword}, '%')
+        </if>
+        <if test="query.viewedWechatQr != null">
+            <choose>
+                <when test="query.viewedWechatQr">
+                    AND qr.last_wechat_qr_view_at IS NOT NULL
+                </when>
+                <otherwise>
+                    AND qr.last_wechat_qr_view_at IS NULL
+                </otherwise>
+            </choose>
+        </if>
+        <if test="query.startTime != null">
+            AND c.first_login_at &gt;= #{query.startTime}
+        </if>
+        <if test="query.endTime != null">
+            AND c.first_login_at &lt;= #{query.endTime}
+        </if>
+    </select>
+</mapper>
