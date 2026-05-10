@@ -11,6 +11,17 @@ spring:
       max-file-size: 500MB
       max-request-size: 520MB
 
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
 server:
   port: 8080
 
@@ -20,3 +31,6 @@ app:
     public-prefix: /uploads
   init:
     boss-password: boss123456
+  auth:
+    customer-token-expire-days: 7
+    admin-token-expire-hours: 8
