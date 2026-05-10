@@ -1,6 +1,6 @@
 export const ADMIN_TOKEN_KEY = 'overduefree_admin_token'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
 
 type QueryValue = string | number | boolean | null | undefined
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
@@ -171,9 +171,9 @@ export function clearAdminToken() {
 }
 
 function buildUrl(path: string, query?: Record<string, QueryValue>) {
-  const url = new URL(path, API_BASE_URL)
+  const url = new URL(path, API_BASE_URL || window.location.origin)
   if (!query) {
-    return url.toString()
+    return resolveUrl(url)
   }
   Object.entries(query).forEach(([key, value]) => {
     if (value === undefined || value === null || value === '') {
@@ -181,7 +181,27 @@ function buildUrl(path: string, query?: Record<string, QueryValue>) {
     }
     url.searchParams.set(key, String(value))
   })
-  return url.toString()
+  return resolveUrl(url)
+}
+
+function resolveUrl(url: URL) {
+  if (API_BASE_URL) {
+    return url.toString()
+  }
+  return `${url.pathname}${url.search}`
+}
+
+export function resolveResourceUrl(fileUrl?: string) {
+  if (!fileUrl) {
+    return ''
+  }
+  if (fileUrl.startsWith('http')) {
+    return fileUrl
+  }
+  if (API_BASE_URL) {
+    return new URL(fileUrl, API_BASE_URL).toString()
+  }
+  return fileUrl
 }
 
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {

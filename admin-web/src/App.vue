@@ -482,6 +482,7 @@ import {
   ADMIN_TOKEN_KEY,
   adminApi,
   clearAdminToken,
+  resolveResourceUrl,
   saveAdminToken,
   type AdminMe,
   type AdminUserItem,
@@ -1094,13 +1095,7 @@ function downloadBlob(blob: Blob, filename: string) {
 }
 
 function resolveFileUrl(fileUrl?: string) {
-  if (!fileUrl) {
-    return ''
-  }
-  if (fileUrl.startsWith('http')) {
-    return fileUrl
-  }
-  return `http://localhost:8080${fileUrl}`
+  return resolveResourceUrl(fileUrl)
 }
 
 function displayRowType(rowType?: string) {
