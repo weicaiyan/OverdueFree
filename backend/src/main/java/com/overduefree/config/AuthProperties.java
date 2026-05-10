@@ -1,17 +1,14 @@
 package com.overduefree.config;
 
+import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
 
-@Component
+@Data
 @ConfigurationProperties(prefix = "app.auth")
 public class AuthProperties {
 
-    private int customerTokenExpireDays = 7;
-    private int adminTokenExpireHours = 8;
-
-    public int getCustomerTokenExpireDays() { return customerTokenExpireDays; }
-    public void setCustomerTokenExpireDays(int customerTokenExpireDays) { this.customerTokenExpireDays = customerTokenExpireDays; }
-    public int getAdminTokenExpireHours() { return adminTokenExpireHours; }
-    public void setAdminTokenExpireHours(int adminTokenExpireHours) { this.adminTokenExpireHours = adminTokenExpireHours; }
+    private int customerTokenDays = 7;
+    private int adminTokenHours = 8;
+    private String initBossUsername = "boss";
+    private String initBossPassword = "boss123456";
 }

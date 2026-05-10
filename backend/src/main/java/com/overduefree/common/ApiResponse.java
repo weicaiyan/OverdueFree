@@ -1,8 +1,8 @@
 package com.overduefree.common;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.Getter;
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
+@Getter
 public class ApiResponse<T> {
 
     private final int code;
@@ -15,23 +15,15 @@ public class ApiResponse<T> {
         this.data = data;
     }
 
-    public static <T> ApiResponse<T> ok() {
-        return new ApiResponse<>(0, "OK", null);
-    }
-
     public static <T> ApiResponse<T> ok(T data) {
-        return new ApiResponse<>(0, "OK", data);
+        return new ApiResponse<>(ErrorCode.SUCCESS, "OK", data);
     }
 
-    public static <T> ApiResponse<T> ok(T data, String message) {
-        return new ApiResponse<>(0, message, data);
+    public static ApiResponse<Void> ok() {
+        return new ApiResponse<>(ErrorCode.SUCCESS, "OK", null);
     }
 
-    public static <T> ApiResponse<T> fail(int code, String message) {
+    public static <T> ApiResponse<T> error(int code, String message) {
         return new ApiResponse<>(code, message, null);
     }
-
-    public int getCode() { return code; }
-    public String getMessage() { return message; }
-    public T getData() { return data; }
 }

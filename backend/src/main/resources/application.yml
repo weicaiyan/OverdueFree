@@ -1,3 +1,32 @@
+server:
+  port: 8080
+
 spring:
+  application:
+    name: overduefree-backend
   profiles:
     active: dev
+  jackson:
+    time-zone: Asia/Shanghai
+    date-format: yyyy-MM-dd HH:mm:ss
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 520MB
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      id-type: auto
+
+app:
+  upload:
+    base-dir: C:/OverdueFree/uploads
+    public-prefix: /uploads
+  auth:
+    customer-token-days: 7
+    admin-token-hours: 8
+    init-boss-username: boss
+    init-boss-password: boss123456

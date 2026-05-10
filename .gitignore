@@ -1,0 +1,12 @@
+.idea/
+.vscode/
+.claude/settings.local.json
+docs/.claude/
+.DS_Store
+*.log
+node_modules/
+dist/
+target/
+*.iml
+.env
+.env.local
