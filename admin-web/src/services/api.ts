@@ -217,7 +217,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     body = JSON.stringify(options.body)
   }
 
-  const response = await fetch(buildUrl(path, options.query), {
+  const response = await safeFetch(buildUrl(path, options.query), {
     method: options.method || 'GET',
     headers,
     body
@@ -248,7 +248,7 @@ async function exportBlob(path: string, payload: unknown): Promise<ExportBlobRes
     headers.set('Authorization', `Bearer ${token}`)
   }
 
-  const response = await fetch(buildUrl(path), {
+  const response = await safeFetch(buildUrl(path), {
     method: 'POST',
     headers,
     body: JSON.stringify(payload)
@@ -284,7 +284,7 @@ async function uploadFile(file: File, category: 'IMAGE' | 'VIDEO') {
     headers.set('Authorization', `Bearer ${token}`)
   }
 
-  const response = await fetch(buildUrl('/api/admin/files/upload', { category }), {
+  const response = await safeFetch(buildUrl('/api/admin/files/upload', { category }), {
     method: 'POST',
     headers,
     body: formData
@@ -294,6 +294,14 @@ async function uploadFile(file: File, category: 'IMAGE' | 'VIDEO') {
     throw new Error(result.message || `上传失败：${response.status}`)
   }
   return result.data
+}
+
+async function safeFetch(input: RequestInfo | URL, init?: RequestInit) {
+  try {
+    return await fetch(input, init)
+  } catch {
+    throw new Error('无法连接后端服务，请确认后端已启动')
+  }
 }
 
 export const adminApi = {

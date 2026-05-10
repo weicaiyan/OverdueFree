@@ -1144,6 +1144,10 @@ function leadTitle(item: LeadHistoryItem) {
 }
 
 function getErrorMessage(error: unknown) {
+  if (!localStorage.getItem(ADMIN_TOKEN_KEY) && token.value) {
+    clearSession()
+    return '登录已失效，请重新登录'
+  }
   if (error instanceof Error) {
     return error.message
   }
