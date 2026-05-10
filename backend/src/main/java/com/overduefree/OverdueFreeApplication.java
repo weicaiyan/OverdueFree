@@ -10,7 +10,14 @@ import org.springframework.context.annotation.Bean;
 
 import java.util.TimeZone;
 
-@MapperScan("com.overduefree.module")
+@MapperScan({
+    "com.overduefree.module.admin.mapper",
+    "com.overduefree.module.article.mapper",
+    "com.overduefree.module.asset.mapper",
+    "com.overduefree.module.caseitem.mapper",
+    "com.overduefree.module.configitem.mapper",
+    "com.overduefree.module.customer.mapper"
+})
 @SpringBootApplication
 public class OverdueFreeApplication {
 

@@ -1,8 +1,11 @@
 package com.overduefree.config;
 
+import com.overduefree.auth.AdminAuthInterceptor;
+import com.overduefree.auth.CustomerAuthInterceptor;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -18,9 +21,15 @@ public class WebConfig implements WebMvcConfigurer {
     };
 
     private final UploadProperties uploadProperties;
+    private final CustomerAuthInterceptor customerAuthInterceptor;
+    private final AdminAuthInterceptor adminAuthInterceptor;
 
-    public WebConfig(UploadProperties uploadProperties) {
+    public WebConfig(UploadProperties uploadProperties,
+                     CustomerAuthInterceptor customerAuthInterceptor,
+                     AdminAuthInterceptor adminAuthInterceptor) {
         this.uploadProperties = uploadProperties;
+        this.customerAuthInterceptor = customerAuthInterceptor;
+        this.adminAuthInterceptor = adminAuthInterceptor;
     }
 
     @Override
@@ -31,6 +40,16 @@ public class WebConfig implements WebMvcConfigurer {
             .allowedHeaders("*")
             .allowCredentials(true)
             .maxAge(3600);
+    }
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(customerAuthInterceptor)
+            .addPathPatterns("/api/app/**")
+            .excludePathPatterns("/api/app/auth/send-code", "/api/app/auth/login");
+        registry.addInterceptor(adminAuthInterceptor)
+            .addPathPatterns("/api/admin/**")
+            .excludePathPatterns("/api/admin/auth/login");
     }
 
     @Override
