@@ -12,7 +12,10 @@ import java.time.LocalDateTime;
 @TableName("success_case")
 public class SuccessCase {
 
+    public static final String STATUS_DRAFT = "DRAFT";
     public static final String STATUS_PUBLISHED = "PUBLISHED";
+    public static final int DELETED_NO = 0;
+    public static final int DELETED_YES = 1;
 
     @TableId(type = IdType.AUTO)
     private Long id;

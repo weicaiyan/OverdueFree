@@ -12,6 +12,12 @@ import java.time.LocalDateTime;
 public class AssetResource {
 
     public static final String STATUS_ACTIVE = "ACTIVE";
+    public static final String KEY_HOME_VIDEO = "HOME_VIDEO";
+    public static final String KEY_HOME_VIDEO_COVER = "HOME_VIDEO_COVER";
+    public static final String KEY_AI_CONSULT_BANNER = "AI_CONSULT_BANNER";
+    public static final String KEY_LOAN_CALCULATOR_BANNER = "LOAN_CALCULATOR_BANNER";
+    public static final String KEY_DEBT_PLAN_BANNER = "DEBT_PLAN_BANNER";
+    public static final String KEY_WECHAT_QR = "WECHAT_QR";
 
     @TableId(type = IdType.AUTO)
     private Long id;
