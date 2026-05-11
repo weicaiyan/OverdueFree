@@ -11,22 +11,63 @@ const upfrontFeePercent = ref('0')
 const monthlyFeePercent = ref('0.70')
 const calculated = ref(false)
 
+function estimateMonthlyIrr(netReceived: number, monthlyPayment: number, months: number) {
+  if (monthlyPayment <= 0 || netReceived <= 0 || months <= 0) {
+    return 0
+  }
+  let low = 0
+  let high = 1
+  for (let i = 0; i < 80; i += 1) {
+    const mid = (low + high) / 2
+    let presentValue = 0
+    for (let period = 1; period <= months; period += 1) {
+      presentValue += monthlyPayment / Math.pow(1 + mid, period)
+    }
+    if (presentValue > netReceived) {
+      low = mid
+    } else {
+      high = mid
+    }
+  }
+  return (low + high) / 2
+}
+
+function formatMoney(value: number) {
+  return value.toFixed(2)
+}
+
 const result = computed(() => {
   const amount = Number(principal.value)
   const months = Number(periods.value)
   const upfrontRate = Number(upfrontFeePercent.value) / 100
   const monthlyRate = Number(monthlyFeePercent.value) / 100
-  if (amount <= 0 || months <= 0) {
+  if (!Number.isFinite(amount) || !Number.isFinite(months) || !Number.isFinite(upfrontRate) || !Number.isFinite(monthlyRate)) {
+    return null
+  }
+  if (amount <= 0 || months <= 0 || upfrontRate < 0 || monthlyRate < 0) {
     return null
   }
   const upfrontFee = amount * upfrontRate
+  const netReceived = amount - upfrontFee
+  if (netReceived <= 0) {
+    return null
+  }
+  const principalPerPeriod = amount / months
   const monthlyFee = amount * monthlyRate
+  const monthlyPayment = principalPerPeriod + monthlyFee
   const totalFee = upfrontFee + monthlyFee * months
-  const annualized = (totalFee / amount / (months / 12)) * 100
+  const nominalAnnualized = monthlyRate * 12 * 100
+  const monthlyIrr = estimateMonthlyIrr(netReceived, monthlyPayment, months)
+  const actualAnnualized = (Math.pow(1 + monthlyIrr, 12) - 1) * 100
   return {
-    monthlyFee: monthlyFee.toFixed(2),
-    totalFee: totalFee.toFixed(2),
-    annualized: annualized.toFixed(2)
+    upfrontFee: formatMoney(upfrontFee),
+    netReceived: formatMoney(netReceived),
+    principalPerPeriod: formatMoney(principalPerPeriod),
+    monthlyFee: formatMoney(monthlyFee),
+    monthlyPayment: formatMoney(monthlyPayment),
+    totalFee: formatMoney(totalFee),
+    nominalAnnualized: nominalAnnualized.toFixed(2),
+    actualAnnualized: actualAnnualized.toFixed(2)
   }
 })
 
@@ -80,7 +121,7 @@ function clear() {
         <input v-model="monthlyFeePercent" class="field" type="digit" />
         <text class="unit">%</text>
       </view>
-      <view class="formula">注：每期手续费（利率）=(年利率/12)</view>
+      <view class="formula">注：按到账金额和每期还款现金流估算实际年化</view>
       <view class="actions">
         <button class="primary" @click="calculate">计算</button>
         <button class="secondary" @click="clear">清除</button>
@@ -89,9 +130,13 @@ function clear() {
 
     <view v-if="calculated && result" class="result-card">
       <view class="result-title">估算结果</view>
+      <view class="result-line">实际到账约：{{ result.netReceived }} 元</view>
+      <view class="result-line">每期本金约：{{ result.principalPerPeriod }} 元</view>
       <view class="result-line">每期手续费约：{{ result.monthlyFee }} 元</view>
+      <view class="result-line">每期还款约：{{ result.monthlyPayment }} 元</view>
       <view class="result-line">总手续费约：{{ result.totalFee }} 元</view>
-      <view class="result-line">折算年化约：{{ result.annualized }}%</view>
+      <view class="result-line">名义年化参考：{{ result.nominalAnnualized }}%</view>
+      <view class="result-line highlight">现金流估算年化约：{{ result.actualAnnualized }}%</view>
       <view class="tip">以上计算结果仅供参考，实际费用以合同和平台规则为准。</view>
     </view>
 
@@ -195,6 +240,12 @@ function clear() {
   color: #666666;
   font-size: 16px;
   line-height: 1.8;
+}
+
+.result-line.highlight {
+  color: #f75a50;
+  font-size: 18px;
+  font-weight: 800;
 }
 
 .tip,
