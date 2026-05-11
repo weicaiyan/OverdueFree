@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import BottomTabs from '../../components/BottomTabs.vue'
 import PageHeader from '../../components/PageHeader.vue'
+import PageState from '../../components/PageState.vue'
 import WechatQrModal from '../../components/WechatQrModal.vue'
 import { api } from '../../services/api'
 import { requireLogin } from '../../services/auth'
@@ -11,6 +12,8 @@ import type { HomeData, SuccessCaseItem } from '../../types'
 const cases = ref<SuccessCaseItem[]>([])
 const homeData = ref<HomeData>({ assets: {}, serviceSteps: [] })
 const qrVisible = ref(false)
+const loading = ref(false)
+const errorText = ref('')
 
 onShow(async () => {
   if (!(await requireLogin())) {
@@ -20,12 +23,16 @@ onShow(async () => {
 })
 
 async function loadData() {
+  loading.value = true
+  errorText.value = ''
   try {
     const [casePage, home] = await Promise.all([api.cases(1, 20), api.home()])
     cases.value = casePage.list
     homeData.value = home
   } catch (error) {
-    uni.showToast({ title: '案例加载失败', icon: 'none' })
+    errorText.value = '案例加载失败，请检查后端服务或稍后重试'
+  } finally {
+    loading.value = false
   }
 }
 
@@ -37,7 +44,26 @@ function goDetail(id: number) {
 <template>
   <view class="case-page">
     <PageHeader title="成功案例" />
-    <view class="list">
+    <PageState
+      v-if="loading && !cases.length"
+      title="正在加载案例"
+      subtitle="请稍候"
+      compact
+    />
+    <PageState
+      v-else-if="errorText"
+      title="案例加载失败"
+      :subtitle="errorText"
+      action-text="重新加载"
+      @action="loadData"
+    />
+    <PageState
+      v-else-if="!cases.length"
+      title="暂无成功案例"
+      subtitle="后台发布案例后会展示在这里"
+      compact
+    />
+    <view v-else class="list">
       <view v-for="item in cases" :key="item.id" class="case-card">
         <view class="card-head">
           <view class="avatar">人</view>

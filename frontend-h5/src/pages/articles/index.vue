@@ -3,22 +3,33 @@ import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import BottomTabs from '../../components/BottomTabs.vue'
 import PageHeader from '../../components/PageHeader.vue'
+import PageState from '../../components/PageState.vue'
 import { api, resolveFileUrl } from '../../services/api'
 import { requireLogin } from '../../services/auth'
 import type { ArticleItem } from '../../types'
 
 const articles = ref<ArticleItem[]>([])
+const loading = ref(false)
+const errorText = ref('')
 
 onShow(async () => {
   if (!(await requireLogin())) {
     return
   }
+  loadArticles()
+})
+
+async function loadArticles() {
+  loading.value = true
+  errorText.value = ''
   try {
     articles.value = (await api.articles(1, 20)).list
   } catch (error) {
-    uni.showToast({ title: '资讯加载失败', icon: 'none' })
+    errorText.value = '资讯加载失败，请检查后端服务或稍后重试'
+  } finally {
+    loading.value = false
   }
-})
+}
 
 function goDetail(id: number) {
   uni.navigateTo({ url: `/pages/articles/detail?id=${id}` })
@@ -28,7 +39,26 @@ function goDetail(id: number) {
 <template>
   <view class="article-page">
     <PageHeader title="教程&资讯" />
-    <view class="list">
+    <PageState
+      v-if="loading && !articles.length"
+      title="正在加载资讯"
+      subtitle="请稍候"
+      compact
+    />
+    <PageState
+      v-else-if="errorText"
+      title="资讯加载失败"
+      :subtitle="errorText"
+      action-text="重新加载"
+      @action="loadArticles"
+    />
+    <PageState
+      v-else-if="!articles.length"
+      title="暂无教程资讯"
+      subtitle="后台发布资讯后会展示在这里"
+      compact
+    />
+    <view v-else class="list">
       <button v-for="item in articles" :key="item.id" class="article-card" @click="goDetail(item.id)">
         <image v-if="item.coverUrl" class="cover" mode="aspectFill" :src="resolveFileUrl(item.coverUrl)" />
         <view v-else class="cover placeholder">资讯</view>

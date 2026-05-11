@@ -16,6 +16,7 @@ export async function requireLogin() {
     return true
   } catch (error) {
     clearCustomerToken()
+    uni.reLaunch({ url: '/pages/login/index' })
     return false
   }
 }

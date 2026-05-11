@@ -43,7 +43,11 @@ onShow(async () => {
   if (!(await requireLogin())) {
     return
   }
-  homeData.value = await api.home()
+  try {
+    homeData.value = await api.home()
+  } catch (error) {
+    uni.showToast({ title: '顾问二维码加载失败', icon: 'none' })
+  }
 })
 
 function choose(key: string, value: string) {
@@ -55,6 +59,9 @@ function selected(key: string, value: string) {
 }
 
 async function submit() {
+  if (submitting.value) {
+    return
+  }
   if (!form.value.surname || !form.value.region || Number(form.value.debtAmount) <= 0) {
     uni.showToast({ title: '请填写必填信息', icon: 'none' })
     return

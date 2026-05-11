@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import AssetImage from '../../components/AssetImage.vue'
 import BottomTabs from '../../components/BottomTabs.vue'
+import PageState from '../../components/PageState.vue'
 import WechatQrModal from '../../components/WechatQrModal.vue'
 import { api, resolveFileUrl } from '../../services/api'
 import { requireLogin } from '../../services/auth'
@@ -14,6 +15,9 @@ const homeData = ref<HomeData>({
 })
 const qrVisible = ref(false)
 const videoVisible = ref(false)
+const loading = ref(false)
+const loaded = ref(false)
+const errorText = ref('')
 
 onShow(async () => {
   if (!(await requireLogin())) {
@@ -23,10 +27,15 @@ onShow(async () => {
 })
 
 async function loadHome() {
+  loading.value = true
+  errorText.value = ''
   try {
     homeData.value = await api.home()
+    loaded.value = true
   } catch (error) {
-    uni.showToast({ title: '首页加载失败', icon: 'none' })
+    errorText.value = '首页加载失败，请检查后端服务或稍后重试'
+  } finally {
+    loading.value = false
   }
 }
 
@@ -48,55 +57,70 @@ function go(url: string) {
   <view class="home-page">
     <view class="page-title">逾期上岸</view>
 
-    <button class="video-card" @click="openVideo">
-      <AssetImage
-        :asset="homeData.assets.homeVideoCover || homeData.assets.homeVideo"
-        title="失信人员宣传片"
-        subtitle="立即观看"
-        tone="red"
-      />
-      <view class="play-button">▶</view>
-    </button>
-
-    <view class="entry-grid">
-      <button class="small-entry" @click="go('/pages/ai-chat/index')">
+    <PageState
+      v-if="loading && !loaded"
+      title="正在加载首页"
+      subtitle="请稍候"
+      compact
+    />
+    <PageState
+      v-else-if="errorText"
+      title="首页加载失败"
+      :subtitle="errorText"
+      action-text="重新加载"
+      @action="loadHome"
+    />
+    <template v-else>
+      <button class="video-card" @click="openVideo">
         <AssetImage
-          :asset="homeData.assets.aiConsultBanner"
-          title="AI债务咨询师"
-          subtitle="一键 Chat"
-          tone="blue"
+          :asset="homeData.assets.homeVideoCover || homeData.assets.homeVideo"
+          title="失信人员宣传片"
+          subtitle="立即观看"
+          tone="red"
         />
+        <view class="play-button">▶</view>
       </button>
-      <button class="small-entry" @click="go('/pages/calculator/index')">
-        <AssetImage
-          :asset="homeData.assets.loanCalculatorBanner"
-          title="来算算您的网贷"
-          subtitle="真实利率估算"
-          tone="blue"
-        />
-      </button>
-    </view>
 
-    <button class="wide-entry" @click="go('/pages/plan-form/index')">
-      <AssetImage
-        :asset="homeData.assets.debtPlanBanner"
-        title="规划优化债务"
-        subtitle="动动手指，马上试试"
-        tone="teal"
-      />
-    </button>
-
-    <view class="section-title">服务流程</view>
-    <view class="section-subtitle">Service Steps</view>
-    <view class="steps">
-      <view v-for="(step, index) in homeData.serviceSteps" :key="step.title" class="step">
-        <view class="step-number">{{ index + 1 }}</view>
-        <view class="step-title">{{ step.title }}</view>
-        <view class="step-desc">{{ step.description }}</view>
+      <view class="entry-grid">
+        <button class="small-entry" @click="go('/pages/ai-chat/index')">
+          <AssetImage
+            :asset="homeData.assets.aiConsultBanner"
+            title="AI债务咨询师"
+            subtitle="一键 Chat"
+            tone="blue"
+          />
+        </button>
+        <button class="small-entry" @click="go('/pages/calculator/index')">
+          <AssetImage
+            :asset="homeData.assets.loanCalculatorBanner"
+            title="来算算您的网贷"
+            subtitle="真实利率估算"
+            tone="blue"
+          />
+        </button>
       </view>
-    </view>
 
-    <button class="fixed-cta" @click="qrVisible = true">领取债务减免延期方案</button>
+      <button class="wide-entry" @click="go('/pages/plan-form/index')">
+        <AssetImage
+          :asset="homeData.assets.debtPlanBanner"
+          title="规划优化债务"
+          subtitle="动动手指，马上试试"
+          tone="teal"
+        />
+      </button>
+
+      <view class="section-title">服务流程</view>
+      <view class="section-subtitle">Service Steps</view>
+      <view class="steps">
+        <view v-for="(step, index) in homeData.serviceSteps" :key="step.title" class="step">
+          <view class="step-number">{{ index + 1 }}</view>
+          <view class="step-title">{{ step.title }}</view>
+          <view class="step-desc">{{ step.description }}</view>
+        </view>
+      </view>
+
+      <button class="fixed-cta" @click="qrVisible = true">领取债务减免延期方案</button>
+    </template>
     <view v-if="videoVisible" class="video-mask" @click="videoVisible = false">
       <view class="video-panel" @click.stop>
         <video

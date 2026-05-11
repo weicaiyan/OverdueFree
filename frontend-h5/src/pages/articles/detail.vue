@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import PageHeader from '../../components/PageHeader.vue'
+import PageState from '../../components/PageState.vue'
 import WechatQrModal from '../../components/WechatQrModal.vue'
 import { api, resolveFileUrl } from '../../services/api'
 import { requireLogin } from '../../services/auth'
@@ -11,6 +12,8 @@ const id = ref(0)
 const detail = ref<ArticleItem | null>(null)
 const homeData = ref<HomeData>({ assets: {}, serviceSteps: [] })
 const qrVisible = ref(false)
+const loading = ref(false)
+const errorText = ref('')
 
 onLoad((query) => {
   id.value = Number(query?.id || 0)
@@ -20,23 +23,48 @@ onShow(async () => {
   if (!(await requireLogin()) || !id.value) {
     return
   }
-  const [article, home] = await Promise.all([api.articleDetail(id.value), api.home()])
-  detail.value = article
-  homeData.value = home
+  loadDetail()
 })
+
+async function loadDetail() {
+  loading.value = true
+  errorText.value = ''
+  try {
+    const [article, home] = await Promise.all([api.articleDetail(id.value), api.home()])
+    detail.value = article
+    homeData.value = home
+  } catch (error) {
+    errorText.value = '资讯详情加载失败，请稍后重试'
+  } finally {
+    loading.value = false
+  }
+}
 </script>
 
 <template>
   <view class="detail-page">
     <PageHeader title="资讯详情" back />
-    <view v-if="detail" class="article">
+    <PageState
+      v-if="loading && !detail"
+      title="正在加载详情"
+      subtitle="请稍候"
+      compact
+    />
+    <PageState
+      v-else-if="errorText"
+      title="详情加载失败"
+      :subtitle="errorText"
+      action-text="重新加载"
+      @action="loadDetail"
+    />
+    <view v-else-if="detail" class="article">
       <view class="title">{{ detail.title }}</view>
       <view class="time">{{ detail.publishTime || '' }}</view>
       <image v-if="detail.coverUrl" class="cover" mode="aspectFill" :src="resolveFileUrl(detail.coverUrl)" />
       <view class="summary">{{ detail.summary }}</view>
       <view class="content">{{ detail.contentText || detail.summary || '内容待补充。' }}</view>
     </view>
-    <button class="fixed-cta" @click="qrVisible = true">领取债务减免延期方案</button>
+    <button v-if="detail" class="fixed-cta" @click="qrVisible = true">领取债务减免延期方案</button>
     <WechatQrModal :visible="qrVisible" :asset="homeData.assets.wechatQr" source-page="ARTICLE_DETAIL" @close="qrVisible = false" />
   </view>
 </template>

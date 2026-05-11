@@ -7,12 +7,17 @@ const phone = ref('')
 const code = ref('')
 const mockCode = ref('')
 const loading = ref(false)
+const codeLoading = ref(false)
 
 async function sendCode() {
+  if (codeLoading.value) {
+    return
+  }
   if (!isPhone(phone.value)) {
     uni.showToast({ title: '请输入正确手机号', icon: 'none' })
     return
   }
+  codeLoading.value = true
   try {
     const result = await api.sendCode(phone.value)
     mockCode.value = result.mockCode
@@ -20,6 +25,8 @@ async function sendCode() {
     uni.showToast({ title: '验证码已生成', icon: 'none' })
   } catch (error) {
     uni.showToast({ title: '验证码获取失败', icon: 'none' })
+  } finally {
+    codeLoading.value = false
   }
 }
 
@@ -55,7 +62,9 @@ async function login() {
       <view class="field-label">验证码</view>
       <view class="code-row">
         <input v-model="code" class="field code-field" type="number" maxlength="6" placeholder="请输入验证码" />
-        <button class="code-button" @click="sendCode">获取验证码</button>
+        <button class="code-button" :disabled="codeLoading" @click="sendCode">
+          {{ codeLoading ? '生成中' : '获取验证码' }}
+        </button>
       </view>
       <view v-if="mockCode" class="mock-code">本次验证码：{{ mockCode }}</view>
       <button class="login-button" :disabled="loading" @click="login">
