@@ -38,6 +38,7 @@
         <el-menu-item index="articles">资讯管理</el-menu-item>
         <el-menu-item index="cases">成功案例</el-menu-item>
         <el-menu-item index="admins" :disabled="!isBoss">管理员管理</el-menu-item>
+        <el-menu-item index="settings" :disabled="!isBoss">系统设置</el-menu-item>
       </el-menu>
     </el-aside>
 
@@ -342,6 +343,51 @@
             </el-table>
           </template>
         </section>
+
+        <section v-show="activeSection === 'settings'" class="panel">
+          <el-alert
+            v-if="!isBoss"
+            :closable="false"
+            show-icon
+            title="只有 BOSS 角色可以管理系统设置。"
+            type="warning"
+          />
+          <template v-else>
+            <el-alert
+              class="section-alert"
+              :closable="false"
+              show-icon
+              title="系统设置会影响真实登录行为，保存后新登录客户立即按新有效期生成登录状态。"
+              type="warning"
+            />
+            <el-form
+              v-loading="settingsLoading"
+              class="settings-form"
+              label-position="top"
+              @submit.prevent="saveSettings"
+            >
+              <el-form-item label="客户登录有效期">
+                <div class="settings-line">
+                  <el-input-number
+                    v-model="settingsForm.customerLoginExpireDays"
+                    :max="365"
+                    :min="1"
+                    :step="1"
+                    controls-position="right"
+                  />
+                  <span class="settings-unit">天</span>
+                  <span class="muted">默认 7 天，建议本地演示保持 7 天。</span>
+                </div>
+              </el-form-item>
+              <el-form-item>
+                <el-button :loading="settingsSaving" type="danger" @click="saveSettings">保存设置</el-button>
+                <span v-if="settings?.updatedAt" class="muted settings-updated">
+                  最近更新：{{ formatDateTime(settings.updatedAt) }}
+                </span>
+              </el-form-item>
+            </el-form>
+          </template>
+        </section>
       </el-main>
     </el-container>
   </el-container>
@@ -498,10 +544,11 @@ import {
   type HealthResult,
   type LeadHistoryItem,
   type LeadListItem,
-  type SuccessCaseItem
+  type SuccessCaseItem,
+  type SystemSettings
 } from './services/api'
 
-type SectionKey = 'leads' | 'assets' | 'articles' | 'cases' | 'admins'
+type SectionKey = 'leads' | 'assets' | 'articles' | 'cases' | 'admins' | 'settings'
 
 const loginForm = reactive({
   username: 'boss',
@@ -557,7 +604,8 @@ const sectionTitle = computed(() => {
     assets: '素材管理',
     articles: '资讯管理',
     cases: '成功案例',
-    admins: '管理员管理'
+    admins: '管理员管理',
+    settings: '系统设置'
   }
   return titles[activeSection.value]
 })
@@ -567,7 +615,8 @@ const sectionDescription = computed(() => {
     assets: '维护首页视频、入口图片和企业微信二维码。',
     articles: '维护 H5 资讯列表和详情文本。',
     cases: '维护成功案例卡片和详情文本。',
-    admins: '创建少量内部管理员账号，只有 BOSS 可操作。'
+    admins: '创建少量内部管理员账号，只有 BOSS 可操作。',
+    settings: '配置客户登录有效期等本地演示和上线前都会用到的基础参数。'
   }
   return descriptions[activeSection.value]
 })
@@ -669,6 +718,12 @@ const adminForm = reactive({
   role: 'ADMIN',
   status: 'ACTIVE'
 })
+const settingsLoading = ref(false)
+const settingsSaving = ref(false)
+const settings = ref<SystemSettings | null>(null)
+const settingsForm = reactive({
+  customerLoginExpireDays: 7
+})
 
 onMounted(async () => {
   if (!token.value) {
@@ -738,8 +793,8 @@ async function loadHealth() {
 }
 
 async function handleSectionSelect(section: string) {
-  if (section === 'admins' && !isBoss.value) {
-    ElMessage.warning('只有 BOSS 角色可以管理管理员')
+  if ((section === 'admins' || section === 'settings') && !isBoss.value) {
+    ElMessage.warning('只有 BOSS 角色可以操作该页面')
     return
   }
   activeSection.value = section as SectionKey
@@ -757,6 +812,8 @@ async function loadCurrentSection() {
     await loadCases()
   } else if (activeSection.value === 'admins' && isBoss.value) {
     await loadAdminUsers()
+  } else if (activeSection.value === 'settings' && isBoss.value) {
+    await loadSettings()
   }
 }
 
@@ -1120,6 +1177,37 @@ async function resetAdminPassword(row: AdminUserItem) {
   }
 }
 
+async function loadSettings() {
+  settingsLoading.value = true
+  try {
+    const result = await adminApi.settings()
+    settings.value = result
+    settingsForm.customerLoginExpireDays = result.customerLoginExpireDays
+  } catch (error) {
+    ElMessage.error(getErrorMessage(error))
+  } finally {
+    settingsLoading.value = false
+  }
+}
+
+async function saveSettings() {
+  if (settingsForm.customerLoginExpireDays < 1 || settingsForm.customerLoginExpireDays > 365) {
+    ElMessage.warning('客户登录有效期必须在 1 到 365 天之间')
+    return
+  }
+  settingsSaving.value = true
+  try {
+    settings.value = await adminApi.updateSettings({
+      customerLoginExpireDays: settingsForm.customerLoginExpireDays
+    })
+    ElMessage.success('系统设置已保存')
+  } catch (error) {
+    ElMessage.error(getErrorMessage(error))
+  } finally {
+    settingsSaving.value = false
+  }
+}
+
 async function confirmAndRun(message: string, action: () => Promise<unknown>, refresh: () => Promise<void>) {
   try {
     await ElMessageBox.confirm(message, '请确认', {
@@ -1412,6 +1500,26 @@ function getErrorMessage(error: unknown) {
 
 .section-alert {
   margin-bottom: 16px;
+}
+
+.settings-form {
+  max-width: 560px;
+}
+
+.settings-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.settings-unit {
+  color: #50545f;
+  font-weight: 700;
+}
+
+.settings-updated {
+  margin-left: 12px;
 }
 
 .inline-upload {

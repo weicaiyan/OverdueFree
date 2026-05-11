@@ -163,6 +163,11 @@ export interface HealthResult {
   checkedAt?: string
 }
 
+export interface SystemSettings {
+  customerLoginExpireDays: number
+  updatedAt?: string
+}
+
 export interface ExportBlobResult {
   blob: Blob
   filename: string
@@ -353,5 +358,8 @@ export const adminApi = {
   updateAdminUser: (id: number, payload: { displayName: string; role: string; status: string }) =>
     request<AdminUserItem>(`/api/admin/users/${id}`, { method: 'PUT', body: payload }),
   resetAdminPassword: (id: number, password: string) =>
-    request<void>(`/api/admin/users/${id}/password`, { method: 'POST', body: { password } })
+    request<void>(`/api/admin/users/${id}/password`, { method: 'POST', body: { password } }),
+  settings: () => request<SystemSettings>('/api/admin/settings'),
+  updateSettings: (payload: { customerLoginExpireDays: number }) =>
+    request<SystemSettings>('/api/admin/settings', { method: 'PUT', body: payload })
 }
