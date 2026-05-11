@@ -21,6 +21,20 @@ onShow(async () => {
     // 个人中心的核心动作是退出登录，首页素材失败不阻塞页面。
   }
 })
+
+function confirmLogout() {
+  uni.showModal({
+    title: '退出登录',
+    content: '确认退出当前手机号登录状态？',
+    confirmText: '退出',
+    confirmColor: '#f75a50',
+    success: (result) => {
+      if (result.confirm) {
+        logout()
+      }
+    }
+  })
+}
 </script>
 
 <template>
@@ -39,7 +53,7 @@ onShow(async () => {
         <view class="menu-icon">▤</view>
         <view class="menu-text">隐私协议</view>
       </view>
-      <button class="menu-item danger" @click="logout">
+      <button class="menu-item danger" @click="confirmLogout">
         <view class="menu-icon">→</view>
         <view class="menu-text">退出登录</view>
       </button>

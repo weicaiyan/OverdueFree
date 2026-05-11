@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { api } from '../../services/api'
 import { isPhone, saveLoginToken } from '../../services/auth'
+import { clearCustomerToken, getCustomerToken } from '../../services/storage'
 
 const phone = ref('')
 const code = ref('')
@@ -9,17 +11,32 @@ const mockCode = ref('')
 const loading = ref(false)
 const codeLoading = ref(false)
 
+onShow(async () => {
+  const token = getCustomerToken()
+  if (!token) {
+    return
+  }
+  try {
+    await api.me()
+    uni.reLaunch({ url: '/pages/home/index' })
+  } catch (error) {
+    clearCustomerToken()
+  }
+})
+
 async function sendCode() {
   if (codeLoading.value) {
     return
   }
-  if (!isPhone(phone.value)) {
+  const normalizedPhone = phone.value.trim()
+  if (!isPhone(normalizedPhone)) {
     uni.showToast({ title: '请输入正确手机号', icon: 'none' })
     return
   }
   codeLoading.value = true
   try {
-    const result = await api.sendCode(phone.value)
+    const result = await api.sendCode(normalizedPhone)
+    phone.value = normalizedPhone
     mockCode.value = result.mockCode
     code.value = result.mockCode
     uni.showToast({ title: '验证码已生成', icon: 'none' })
@@ -31,17 +48,22 @@ async function sendCode() {
 }
 
 async function login() {
-  if (!isPhone(phone.value)) {
+  if (loading.value) {
+    return
+  }
+  const normalizedPhone = phone.value.trim()
+  const normalizedCode = code.value.trim()
+  if (!isPhone(normalizedPhone)) {
     uni.showToast({ title: '请输入正确手机号', icon: 'none' })
     return
   }
-  if (!/^\d{6}$/.test(code.value)) {
+  if (!/^\d{6}$/.test(normalizedCode)) {
     uni.showToast({ title: '请输入6位验证码', icon: 'none' })
     return
   }
   loading.value = true
   try {
-    const result = await api.login(phone.value, code.value)
+    const result = await api.login(normalizedPhone, normalizedCode)
     saveLoginToken(result.token)
     uni.reLaunch({ url: '/pages/home/index' })
   } catch (error) {
@@ -61,13 +83,14 @@ async function login() {
       <input v-model="phone" class="field" type="number" maxlength="11" placeholder="请输入手机号" />
       <view class="field-label">验证码</view>
       <view class="code-row">
-        <input v-model="code" class="field code-field" type="number" maxlength="6" placeholder="请输入验证码" />
-        <button class="code-button" :disabled="codeLoading" @click="sendCode">
+        <input v-model="code" class="field code-field" type="number" maxlength="6" placeholder="请输入验证码" @confirm="login" />
+        <button class="code-button" :class="{ disabled: codeLoading }" :disabled="codeLoading" @click="sendCode">
           {{ codeLoading ? '生成中' : '获取验证码' }}
         </button>
       </view>
       <view v-if="mockCode" class="mock-code">本次验证码：{{ mockCode }}</view>
-      <button class="login-button" :disabled="loading" @click="login">
+      <view class="login-tip">演示版验证码会直接显示在页面上，方便本地试用。</view>
+      <button class="login-button" :class="{ disabled: loading }" :disabled="loading" @click="login">
         {{ loading ? '登录中...' : '登录' }}
       </button>
     </view>
@@ -137,10 +160,22 @@ async function login() {
   font-weight: 700;
 }
 
+.code-button.disabled,
+.login-button.disabled {
+  opacity: 0.72;
+}
+
 .mock-code {
   margin-top: 14px;
   color: #f75a50;
   font-size: 14px;
+}
+
+.login-tip {
+  margin-top: 10px;
+  color: #9a9a9a;
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .login-button {
