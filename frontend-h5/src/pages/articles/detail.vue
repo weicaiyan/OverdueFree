@@ -26,6 +26,10 @@ onShow(async () => {
   loadDetail()
 })
 
+function backToList() {
+  uni.reLaunch({ url: '/pages/articles/index' })
+}
+
 async function loadDetail() {
   loading.value = true
   errorText.value = ''
@@ -56,7 +60,14 @@ function openArticleCta() {
   <view class="detail-page">
     <PageHeader title="资讯详情" back />
     <PageState
-      v-if="loading && !detail"
+      v-if="!id"
+      title="资讯不存在"
+      subtitle="缺少资讯编号，请返回列表重新选择"
+      action-text="返回资讯列表"
+      @action="backToList"
+    />
+    <PageState
+      v-else-if="loading && !detail"
       title="正在加载详情"
       subtitle="请稍候"
       compact

@@ -36,7 +36,30 @@ function formatMoney(value: number) {
   return value.toFixed(2)
 }
 
+const validationMessage = computed(() => {
+  const amount = Number(principal.value)
+  const months = Number(periods.value)
+  const upfrontRate = Number(upfrontFeePercent.value)
+  const monthlyRate = Number(monthlyFeePercent.value)
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return '请填写正确分期金额'
+  }
+  if (!Number.isInteger(months) || months <= 0 || months > 120) {
+    return '分期期数请输入1-120之间的整数'
+  }
+  if (!Number.isFinite(upfrontRate) || upfrontRate < 0 || upfrontRate >= 100) {
+    return '一次性手续费需小于100%'
+  }
+  if (!Number.isFinite(monthlyRate) || monthlyRate < 0 || monthlyRate >= 100) {
+    return '每期手续费需小于100%'
+  }
+  return ''
+})
+
 const result = computed(() => {
+  if (validationMessage.value) {
+    return null
+  }
   const amount = Number(principal.value)
   const months = Number(periods.value)
   const upfrontRate = Number(upfrontFeePercent.value) / 100
@@ -76,8 +99,8 @@ onShow(async () => {
 })
 
 async function calculate() {
-  if (!result.value) {
-    uni.showToast({ title: '请填写正确金额和期数', icon: 'none' })
+  if (validationMessage.value || !result.value) {
+    uni.showToast({ title: validationMessage.value || '请填写正确金额和期数', icon: 'none' })
     return
   }
   calculated.value = true
@@ -108,7 +131,7 @@ function clear() {
       </view>
       <view class="row">
         <text class="label">分期期数</text>
-        <input v-model="periods" class="field" type="number" />
+        <input v-model="periods" class="field" type="number" maxlength="3" />
         <text class="unit">期</text>
       </view>
       <view class="row">

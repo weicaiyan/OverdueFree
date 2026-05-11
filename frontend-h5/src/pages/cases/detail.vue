@@ -26,6 +26,10 @@ onShow(async () => {
   loadDetail()
 })
 
+function backToList() {
+  uni.reLaunch({ url: '/pages/cases/index' })
+}
+
 async function loadDetail() {
   loading.value = true
   errorText.value = ''
@@ -56,7 +60,14 @@ function openApply() {
   <view class="detail-page">
     <PageHeader title="案例详情" back />
     <PageState
-      v-if="loading && !detail"
+      v-if="!id"
+      title="案例不存在"
+      subtitle="缺少案例编号，请返回列表重新选择"
+      action-text="返回案例列表"
+      @action="backToList"
+    />
+    <PageState
+      v-else-if="loading && !detail"
       title="正在加载详情"
       subtitle="请稍候"
       compact
