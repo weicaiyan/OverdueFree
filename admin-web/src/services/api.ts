@@ -168,6 +168,16 @@ export interface SystemSettings {
   updatedAt?: string
 }
 
+export interface OperationLogItem {
+  id: number
+  adminId?: number
+  action: string
+  targetType?: string
+  targetId?: number
+  detailJson?: string
+  createdAt?: string
+}
+
 export interface ExportBlobResult {
   blob: Blob
   filename: string
@@ -361,5 +371,7 @@ export const adminApi = {
     request<void>(`/api/admin/users/${id}/password`, { method: 'POST', body: { password } }),
   settings: () => request<SystemSettings>('/api/admin/settings'),
   updateSettings: (payload: { customerLoginExpireDays: number }) =>
-    request<SystemSettings>('/api/admin/settings', { method: 'PUT', body: payload })
+    request<SystemSettings>('/api/admin/settings', { method: 'PUT', body: payload }),
+  operationLogs: (query: Record<string, QueryValue>) =>
+    request<PageResult<OperationLogItem>>('/api/admin/operation-logs', { query })
 }

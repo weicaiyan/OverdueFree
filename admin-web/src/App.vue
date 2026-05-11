@@ -39,6 +39,7 @@
         <el-menu-item index="cases">成功案例</el-menu-item>
         <el-menu-item index="admins" :disabled="!isBoss">管理员管理</el-menu-item>
         <el-menu-item index="settings" :disabled="!isBoss">系统设置</el-menu-item>
+        <el-menu-item index="logs" :disabled="!isBoss">操作日志</el-menu-item>
       </el-menu>
     </el-aside>
 
@@ -388,6 +389,79 @@
             </el-form>
           </template>
         </section>
+
+        <section v-show="activeSection === 'logs'" class="panel">
+          <el-alert
+            v-if="!isBoss"
+            :closable="false"
+            show-icon
+            title="只有 BOSS 角色可以查看操作日志。"
+            type="warning"
+          />
+          <template v-else>
+            <div class="toolbar">
+              <el-input v-model="logQuery.adminId" clearable placeholder="管理员ID" />
+              <el-select v-model="logQuery.action" clearable placeholder="操作类型">
+                <el-option label="导出线索" value="EXPORT_LEADS" />
+                <el-option label="创建管理员" value="CREATE_ADMIN" />
+                <el-option label="更新管理员" value="UPDATE_ADMIN" />
+                <el-option label="重置密码" value="RESET_ADMIN_PASSWORD" />
+                <el-option label="更新设置" value="UPDATE_SETTING" />
+              </el-select>
+              <el-select v-model="logQuery.targetType" clearable placeholder="目标类型">
+                <el-option label="线索" value="LEAD" />
+                <el-option label="管理员" value="ADMIN_USER" />
+                <el-option label="系统配置" value="SYS_CONFIG" />
+              </el-select>
+              <el-date-picker
+                v-model="logQuery.startTime"
+                placeholder="开始时间"
+                type="datetime"
+                value-format="YYYY-MM-DD HH:mm:ss"
+              />
+              <el-date-picker
+                v-model="logQuery.endTime"
+                placeholder="结束时间"
+                type="datetime"
+                value-format="YYYY-MM-DD HH:mm:ss"
+              />
+              <el-button type="danger" @click="searchLogs">筛选</el-button>
+              <el-button @click="resetLogQuery">重置</el-button>
+            </div>
+
+            <el-table v-loading="logLoading" :data="operationLogs" stripe>
+              <el-table-column label="时间" min-width="172">
+                <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
+              </el-table-column>
+              <el-table-column label="管理员ID" width="110" prop="adminId" />
+              <el-table-column label="操作" min-width="160">
+                <template #default="{ row }">{{ displayOperationAction(row.action) }}</template>
+              </el-table-column>
+              <el-table-column label="目标" min-width="160">
+                <template #default="{ row }">
+                  {{ displayOperationTarget(row.targetType) }}
+                  <span class="muted block">ID: {{ row.targetId || '-' }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column label="详情" min-width="320">
+                <template #default="{ row }">
+                  <pre class="log-detail">{{ formatLogDetail(row.detailJson) }}</pre>
+                </template>
+              </el-table-column>
+            </el-table>
+            <el-pagination
+              v-model:current-page="logQuery.page"
+              v-model:page-size="logQuery.pageSize"
+              :page-sizes="[10, 20, 50]"
+              :total="logTotal"
+              background
+              class="pagination"
+              layout="total, sizes, prev, pager, next"
+              @current-change="loadLogs"
+              @size-change="loadLogs"
+            />
+          </template>
+        </section>
       </el-main>
     </el-container>
   </el-container>
@@ -544,11 +618,12 @@ import {
   type HealthResult,
   type LeadHistoryItem,
   type LeadListItem,
+  type OperationLogItem,
   type SuccessCaseItem,
   type SystemSettings
 } from './services/api'
 
-type SectionKey = 'leads' | 'assets' | 'articles' | 'cases' | 'admins' | 'settings'
+type SectionKey = 'leads' | 'assets' | 'articles' | 'cases' | 'admins' | 'settings' | 'logs'
 
 const loginForm = reactive({
   username: 'boss',
@@ -605,7 +680,8 @@ const sectionTitle = computed(() => {
     articles: '资讯管理',
     cases: '成功案例',
     admins: '管理员管理',
-    settings: '系统设置'
+    settings: '系统设置',
+    logs: '操作日志'
   }
   return titles[activeSection.value]
 })
@@ -616,7 +692,8 @@ const sectionDescription = computed(() => {
     articles: '维护 H5 资讯列表和详情文本。',
     cases: '维护成功案例卡片和详情文本。',
     admins: '创建少量内部管理员账号，只有 BOSS 可操作。',
-    settings: '配置客户登录有效期等本地演示和上线前都会用到的基础参数。'
+    settings: '配置客户登录有效期等本地演示和上线前都会用到的基础参数。',
+    logs: '查看导出、管理员管理、系统设置等关键后台操作记录。'
   }
   return descriptions[activeSection.value]
 })
@@ -724,6 +801,18 @@ const settings = ref<SystemSettings | null>(null)
 const settingsForm = reactive({
   customerLoginExpireDays: 7
 })
+const logLoading = ref(false)
+const operationLogs = ref<OperationLogItem[]>([])
+const logTotal = ref(0)
+const logQuery = reactive({
+  adminId: '',
+  action: '',
+  targetType: '',
+  startTime: '',
+  endTime: '',
+  page: 1,
+  pageSize: 10
+})
 
 onMounted(async () => {
   if (!token.value) {
@@ -793,7 +882,7 @@ async function loadHealth() {
 }
 
 async function handleSectionSelect(section: string) {
-  if ((section === 'admins' || section === 'settings') && !isBoss.value) {
+  if ((section === 'admins' || section === 'settings' || section === 'logs') && !isBoss.value) {
     ElMessage.warning('只有 BOSS 角色可以操作该页面')
     return
   }
@@ -814,6 +903,8 @@ async function loadCurrentSection() {
     await loadAdminUsers()
   } else if (activeSection.value === 'settings' && isBoss.value) {
     await loadSettings()
+  } else if (activeSection.value === 'logs' && isBoss.value) {
+    await loadLogs()
   }
 }
 
@@ -1208,6 +1299,46 @@ async function saveSettings() {
   }
 }
 
+async function loadLogs() {
+  logLoading.value = true
+  try {
+    const result = await adminApi.operationLogs(buildLogQuery())
+    operationLogs.value = result.list
+    logTotal.value = result.total
+  } catch (error) {
+    ElMessage.error(getErrorMessage(error))
+  } finally {
+    logLoading.value = false
+  }
+}
+
+function buildLogQuery() {
+  return {
+    adminId: logQuery.adminId || undefined,
+    action: logQuery.action,
+    targetType: logQuery.targetType,
+    startTime: logQuery.startTime,
+    endTime: logQuery.endTime,
+    page: logQuery.page,
+    pageSize: logQuery.pageSize
+  }
+}
+
+function searchLogs() {
+  logQuery.page = 1
+  loadLogs()
+}
+
+function resetLogQuery() {
+  logQuery.adminId = ''
+  logQuery.action = ''
+  logQuery.targetType = ''
+  logQuery.startTime = ''
+  logQuery.endTime = ''
+  logQuery.page = 1
+  loadLogs()
+}
+
 async function confirmAndRun(message: string, action: () => Promise<unknown>, refresh: () => Promise<void>) {
   try {
     await ElMessageBox.confirm(message, '请确认', {
@@ -1261,6 +1392,37 @@ function displaySource(source?: string) {
 
 function displayStatus(status?: string) {
   return status === 'PUBLISHED' ? '已发布' : '草稿'
+}
+
+function displayOperationAction(action?: string) {
+  const map: Record<string, string> = {
+    EXPORT_LEADS: '导出线索',
+    CREATE_ADMIN: '创建管理员',
+    UPDATE_ADMIN: '更新管理员',
+    RESET_ADMIN_PASSWORD: '重置密码',
+    UPDATE_SETTING: '更新设置'
+  }
+  return action ? map[action] || action : '-'
+}
+
+function displayOperationTarget(targetType?: string) {
+  const map: Record<string, string> = {
+    LEAD: '线索',
+    ADMIN_USER: '管理员',
+    SYS_CONFIG: '系统配置'
+  }
+  return targetType ? map[targetType] || targetType : '-'
+}
+
+function formatLogDetail(detailJson?: string) {
+  if (!detailJson) {
+    return '-'
+  }
+  try {
+    return JSON.stringify(JSON.parse(detailJson), null, 2)
+  } catch {
+    return detailJson
+  }
 }
 
 function formatDateTime(value?: string) {
@@ -1520,6 +1682,16 @@ function getErrorMessage(error: unknown) {
 
 .settings-updated {
   margin-left: 12px;
+}
+
+.log-detail {
+  max-height: 96px;
+  margin: 0;
+  overflow: auto;
+  color: #50545f;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
 }
 
 .inline-upload {
