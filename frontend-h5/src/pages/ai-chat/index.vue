@@ -7,6 +7,7 @@ import { api } from '../../services/api'
 import { requireLogin } from '../../services/auth'
 import { getStorageObject, removeStorageItem, setStorageObject } from '../../services/storage'
 import type { HomeData, LeadPayload } from '../../types'
+import { parseDebtAmount, validateDebtAmount, validateRegion, validateSurname } from '../../utils/leadValidation'
 
 const AI_CHAT_DRAFT_KEY = 'overduefree_ai_chat_draft'
 
@@ -88,21 +89,34 @@ function restoreDraft() {
 }
 
 function next() {
-  if (step.value === 0 && !form.value.surname.trim()) {
-    uni.showToast({ title: '请输入称呼', icon: 'none' })
-    return
+  if (step.value === 0) {
+    const message = validateSurname(form.value.surname)
+    if (message) {
+      uni.showToast({ title: message, icon: 'none' })
+      return
+    }
   }
-  if (step.value === 1 && !form.value.region.trim()) {
-    uni.showToast({ title: '请输入地区', icon: 'none' })
-    return
+  if (step.value === 1) {
+    const message = validateRegion(form.value.region)
+    if (message) {
+      uni.showToast({ title: message, icon: 'none' })
+      return
+    }
   }
-  if (step.value === 2 && Number(form.value.debtAmount) <= 0) {
-    uni.showToast({ title: '请输入债务金额', icon: 'none' })
-    return
+  if (step.value === 2) {
+    const message = validateDebtAmount(form.value.debtAmount)
+    if (message) {
+      uni.showToast({ title: message, icon: 'none' })
+      return
+    }
   }
   if (step.value < 4) {
     step.value += 1
   }
+}
+
+function validateBeforeSubmit() {
+  return validateSurname(form.value.surname) || validateRegion(form.value.region) || validateDebtAmount(form.value.debtAmount)
 }
 
 function prev() {
@@ -119,12 +133,17 @@ async function submit() {
   if (submitting.value) {
     return
   }
+  const message = validateBeforeSubmit()
+  if (message) {
+    uni.showToast({ title: message, icon: 'none' })
+    return
+  }
   submitting.value = true
   const payload: LeadPayload = {
     source: 'AI_CHAT',
     surname: form.value.surname.trim(),
     region: form.value.region.trim(),
-    debtAmount: Number(form.value.debtAmount),
+    debtAmount: parseDebtAmount(form.value.debtAmount),
     debtType: form.value.debtType,
     debtDescription: form.value.debtDescription.trim()
   }

@@ -7,6 +7,7 @@ import { api } from '../../services/api'
 import { requireLogin } from '../../services/auth'
 import { getStorageObject, removeStorageItem, setStorageObject } from '../../services/storage'
 import type { HomeData, LeadPayload } from '../../types'
+import { parseDebtAmount, validateLeadRequiredFields } from '../../utils/leadValidation'
 
 const PLAN_FORM_DRAFT_KEY = 'overduefree_plan_form_draft'
 
@@ -118,8 +119,9 @@ async function submit() {
   if (submitting.value) {
     return
   }
-  if (!form.value.surname.trim() || !form.value.region.trim() || Number(form.value.debtAmount) <= 0) {
-    uni.showToast({ title: '请填写必填信息', icon: 'none' })
+  const message = validateLeadRequiredFields(form.value)
+  if (message) {
+    uni.showToast({ title: message, icon: 'none' })
     return
   }
   submitting.value = true
@@ -127,7 +129,7 @@ async function submit() {
     source: 'PLAN_ASSESSMENT',
     surname: form.value.surname.trim(),
     region: form.value.region.trim(),
-    debtAmount: Number(form.value.debtAmount),
+    debtAmount: parseDebtAmount(form.value.debtAmount),
     debtType: form.value.debtType,
     debtDescription: form.value.debtDescription.trim(),
     ageRange: form.value.ageRange,
