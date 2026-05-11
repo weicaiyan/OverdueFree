@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import PageHeader from '../../components/PageHeader.vue'
 import WechatQrModal from '../../components/WechatQrModal.vue'
@@ -10,6 +10,7 @@ import type { HomeData, LeadPayload } from '../../types'
 const homeData = ref<HomeData>({ assets: {}, serviceSteps: [] })
 const qrVisible = ref(false)
 const submitting = ref(false)
+const submitted = ref(false)
 const form = ref({
   surname: '',
   region: '',
@@ -39,6 +40,13 @@ const debtTypes = [
   { label: '其他', value: 'OTHER' }
 ]
 
+const submitText = computed(() => {
+  if (submitting.value) {
+    return '提交中...'
+  }
+  return submitted.value ? '查看顾问二维码' : '获取规划方案'
+})
+
 onShow(async () => {
   if (!(await requireLogin())) {
     return
@@ -59,21 +67,25 @@ function selected(key: string, value: string) {
 }
 
 async function submit() {
+  if (submitted.value) {
+    qrVisible.value = true
+    return
+  }
   if (submitting.value) {
     return
   }
-  if (!form.value.surname || !form.value.region || Number(form.value.debtAmount) <= 0) {
+  if (!form.value.surname.trim() || !form.value.region.trim() || Number(form.value.debtAmount) <= 0) {
     uni.showToast({ title: '请填写必填信息', icon: 'none' })
     return
   }
   submitting.value = true
   const payload: LeadPayload = {
     source: 'PLAN_ASSESSMENT',
-    surname: form.value.surname,
-    region: form.value.region,
+    surname: form.value.surname.trim(),
+    region: form.value.region.trim(),
     debtAmount: Number(form.value.debtAmount),
     debtType: form.value.debtType,
-    debtDescription: form.value.debtDescription,
+    debtDescription: form.value.debtDescription.trim(),
     ageRange: form.value.ageRange,
     jobStatus: form.value.jobStatus,
     creditStatus: form.value.creditStatus,
@@ -82,6 +94,7 @@ async function submit() {
   }
   try {
     await api.submitLead(payload)
+    submitted.value = true
     uni.showToast({ title: '已收到，人工将结合情况评估', icon: 'none' })
     qrVisible.value = true
   } catch (error) {
@@ -134,8 +147,11 @@ async function submit() {
 
       <view class="field-title">补充描述</view>
       <textarea v-model="form.debtDescription" class="textarea" placeholder="可简单说明逾期平台、收入和当前压力" />
+      <view v-if="submitted" class="success-card">
+        信息已收到，人工顾问将结合您的情况做初步评估。您可以继续查看顾问二维码。
+      </view>
     </view>
-    <button class="fixed-cta" @click="submit">{{ submitting ? '提交中...' : '获取规划方案' }}</button>
+    <button class="fixed-cta" :class="{ submitted }" @click="submit">{{ submitText }}</button>
     <WechatQrModal :visible="qrVisible" :asset="homeData.assets.wechatQr" source-page="PLAN_FORM" @close="qrVisible = false" />
   </view>
 </template>
@@ -224,5 +240,19 @@ async function submit() {
   background: #ef5a4f;
   font-size: 18px;
   font-weight: 800;
+}
+
+.fixed-cta.submitted {
+  background: #45b854;
+}
+
+.success-card {
+  margin-top: 18px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  color: #b83b32;
+  background: #fff0ee;
+  font-size: 14px;
+  line-height: 1.6;
 }
 </style>

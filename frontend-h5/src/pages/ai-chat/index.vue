@@ -9,6 +9,7 @@ import type { HomeData, LeadPayload } from '../../types'
 
 const step = ref(0)
 const submitting = ref(false)
+const submitted = ref(false)
 const qrVisible = ref(false)
 const homeData = ref<HomeData>({ assets: {}, serviceSteps: [] })
 const form = ref({
@@ -43,11 +44,11 @@ onShow(async () => {
 })
 
 function next() {
-  if (step.value === 0 && !form.value.surname) {
+  if (step.value === 0 && !form.value.surname.trim()) {
     uni.showToast({ title: '请输入称呼', icon: 'none' })
     return
   }
-  if (step.value === 1 && !form.value.region) {
+  if (step.value === 1 && !form.value.region.trim()) {
     uni.showToast({ title: '请输入地区', icon: 'none' })
     return
   }
@@ -61,26 +62,44 @@ function next() {
 }
 
 async function submit() {
+  if (submitted.value) {
+    qrVisible.value = true
+    return
+  }
   if (submitting.value) {
     return
   }
   submitting.value = true
   const payload: LeadPayload = {
     source: 'AI_CHAT',
-    surname: form.value.surname,
-    region: form.value.region,
+    surname: form.value.surname.trim(),
+    region: form.value.region.trim(),
     debtAmount: Number(form.value.debtAmount),
     debtType: form.value.debtType,
-    debtDescription: form.value.debtDescription
+    debtDescription: form.value.debtDescription.trim()
   }
   try {
     await api.submitLead(payload)
+    submitted.value = true
     uni.showToast({ title: '提交成功', icon: 'none' })
     qrVisible.value = true
   } catch (error) {
     uni.showToast({ title: '提交失败', icon: 'none' })
   } finally {
     submitting.value = false
+  }
+}
+
+function resetForm() {
+  step.value = 0
+  submitted.value = false
+  qrVisible.value = false
+  form.value = {
+    surname: '',
+    region: '',
+    debtAmount: '',
+    debtType: 'ONLINE_LOAN',
+    debtDescription: ''
   }
 }
 </script>
@@ -95,9 +114,10 @@ async function submit() {
       <view v-if="step > 2" class="bubble user">{{ form.debtAmount }}元</view>
       <view v-if="step > 3" class="bubble user">{{ debtTypes.find((item) => item.value === form.debtType)?.label }}</view>
       <view class="bubble bot">{{ question }}</view>
+      <view v-if="submitted" class="bubble bot success-bubble">信息已收到，人工顾问会结合您的情况做初步评估。</view>
     </view>
 
-    <view class="input-panel">
+    <view v-if="!submitted" class="input-panel">
       <input v-if="step === 0" v-model="form.surname" class="field" placeholder="例如：张先生" />
       <input v-if="step === 1" v-model="form.region" class="field" placeholder="例如：重庆" />
       <input v-if="step === 2" v-model="form.debtAmount" class="field" type="digit" placeholder="例如：50000" />
@@ -114,7 +134,13 @@ async function submit() {
       </view>
       <textarea v-if="step === 4" v-model="form.debtDescription" class="textarea" placeholder="可简单说明逾期平台和当前情况" />
       <button v-if="step < 4" class="send-button" @click="next">下一步</button>
-      <button v-else class="send-button" @click="submit">{{ submitting ? '提交中...' : '提交' }}</button>
+      <button v-else class="send-button" :class="{ disabled: submitting }" @click="submit">
+        {{ submitting ? '提交中...' : '提交' }}
+      </button>
+    </view>
+    <view v-else class="input-panel success-panel">
+      <button class="send-button" @click="qrVisible = true">查看顾问二维码</button>
+      <button class="ghost-button" @click="resetForm">重新填写</button>
     </view>
     <WechatQrModal :visible="qrVisible" :asset="homeData.assets.wechatQr" source-page="AI_CHAT" @close="qrVisible = false" />
   </view>
@@ -123,7 +149,7 @@ async function submit() {
 <style scoped>
 .chat-page {
   min-height: 100vh;
-  padding-bottom: 104px;
+  padding-bottom: 218px;
   box-sizing: border-box;
   background: #fff8ff;
 }
@@ -152,15 +178,26 @@ async function submit() {
   background: #4d8dff;
 }
 
+.success-bubble {
+  border: 1px solid rgba(247, 90, 80, 0.18);
+  color: #b83b32;
+  background: #fff0ee;
+}
+
 .input-panel {
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
-  padding: 14px 16px 22px;
+  padding: 14px 16px calc(22px + env(safe-area-inset-bottom));
   box-sizing: border-box;
   background: #fff8ff;
   border-top: 1px solid #e8e0e8;
+}
+
+.success-panel {
+  display: grid;
+  gap: 10px;
 }
 
 .field,
@@ -206,5 +243,19 @@ async function submit() {
   background: #f75a50;
   font-size: 16px;
   font-weight: 800;
+}
+
+.send-button.disabled {
+  opacity: 0.72;
+}
+
+.ghost-button {
+  width: 100%;
+  height: 44px;
+  border-radius: 22px;
+  color: #f75a50;
+  background: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
 }
 </style>

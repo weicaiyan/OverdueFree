@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import AssetImage from '../../components/AssetImage.vue'
 import BottomTabs from '../../components/BottomTabs.vue'
@@ -18,6 +18,17 @@ const videoVisible = ref(false)
 const loading = ref(false)
 const loaded = ref(false)
 const errorText = ref('')
+
+const fallbackSteps = [
+  { title: '提交信息', description: '信息加密处理，请放心提交' },
+  { title: '法律咨询', description: '人工顾问结合情况初步沟通' },
+  { title: '接受委托', description: '确认方案后再进入后续流程' },
+  { title: '急速处理', description: '结合材料推进沟通处理' }
+]
+
+const serviceSteps = computed(() => {
+  return homeData.value.serviceSteps.length > 0 ? homeData.value.serviceSteps : fallbackSteps
+})
 
 onShow(async () => {
   if (!(await requireLogin())) {
@@ -112,7 +123,7 @@ function go(url: string) {
       <view class="section-title">服务流程</view>
       <view class="section-subtitle">Service Steps</view>
       <view class="steps">
-        <view v-for="(step, index) in homeData.serviceSteps" :key="step.title" class="step">
+        <view v-for="(step, index) in serviceSteps" :key="step.title" class="step">
           <view class="step-number">{{ index + 1 }}</view>
           <view class="step-title">{{ step.title }}</view>
           <view class="step-desc">{{ step.description }}</view>
