@@ -84,7 +84,7 @@ function openApply() {
 <style scoped>
 .detail-page {
   min-height: 100vh;
-  padding: 0 16px 96px;
+  padding: 0 16px calc(116px + env(safe-area-inset-bottom));
   box-sizing: border-box;
   background: #fff4ea;
 }
@@ -111,6 +111,7 @@ function openApply() {
   font-size: 16px;
   color: #555555;
   line-height: 1.5;
+  word-break: break-word;
 }
 
 .accent {
@@ -122,13 +123,15 @@ function openApply() {
   font-size: 16px;
   color: #333333;
   line-height: 1.8;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .fixed-cta {
   position: fixed;
   left: 16px;
   right: 16px;
-  bottom: 26px;
+  bottom: calc(26px + env(safe-area-inset-bottom));
   height: 58px;
   border-radius: 30px;
   color: #ffffff;

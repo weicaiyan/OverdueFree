@@ -76,7 +76,7 @@ function goDetail(id: number) {
 <style scoped>
 .article-page {
   min-height: 100vh;
-  padding: 0 16px 94px;
+  padding: 0 16px calc(94px + env(safe-area-inset-bottom));
   box-sizing: border-box;
   background: #fff4ea;
 }
@@ -120,15 +120,22 @@ function goDetail(id: number) {
 }
 
 .title {
+  display: -webkit-box;
+  overflow: hidden;
   font-size: 18px;
   line-height: 1.4;
   color: #333333;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 .time {
   margin-top: 10px;
   font-size: 14px;
   color: #999999;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .arrow {

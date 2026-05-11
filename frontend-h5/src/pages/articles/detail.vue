@@ -83,7 +83,7 @@ function openArticleCta() {
 <style scoped>
 .detail-page {
   min-height: 100vh;
-  padding: 0 16px 96px;
+  padding: 0 16px calc(116px + env(safe-area-inset-bottom));
   box-sizing: border-box;
   background: #fff4ea;
 }
@@ -99,6 +99,7 @@ function openArticleCta() {
   font-size: 24px;
   font-weight: 800;
   line-height: 1.4;
+  word-break: break-word;
 }
 
 .time {
@@ -118,6 +119,8 @@ function openArticleCta() {
   margin-top: 18px;
   color: #777777;
   line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .content {
@@ -125,13 +128,15 @@ function openArticleCta() {
   color: #333333;
   font-size: 16px;
   line-height: 1.9;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .fixed-cta {
   position: fixed;
   left: 16px;
   right: 16px;
-  bottom: 26px;
+  bottom: calc(26px + env(safe-area-inset-bottom));
   height: 58px;
   border-radius: 30px;
   color: #ffffff;

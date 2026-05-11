@@ -105,7 +105,7 @@ function openApply(id?: number) {
 <style scoped>
 .case-page {
   min-height: 100vh;
-  padding: 0 14px 156px;
+  padding: 0 14px calc(156px + env(safe-area-inset-bottom));
   box-sizing: border-box;
   background: #f4f4f4;
 }
@@ -142,18 +142,25 @@ function openApply(id?: number) {
 
 .person {
   flex: 1;
+  min-width: 0;
   margin-left: 12px;
 }
 
 .name {
   font-size: 18px;
   color: #999999;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .phone {
   margin-top: 6px;
   font-size: 16px;
   color: #a7a7a7;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .apply-button {
@@ -176,6 +183,7 @@ function openApply(id?: number) {
   font-size: 16px;
   color: #999999;
   line-height: 1.5;
+  word-break: break-word;
 }
 
 .amount {
@@ -197,7 +205,7 @@ function openApply(id?: number) {
   position: fixed;
   left: 16px;
   right: 16px;
-  bottom: 88px;
+  bottom: calc(88px + env(safe-area-inset-bottom));
   z-index: 25;
   height: 58px;
   border-radius: 30px;

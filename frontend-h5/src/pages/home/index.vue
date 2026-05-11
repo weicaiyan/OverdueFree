@@ -165,7 +165,7 @@ function go(url: string, entry: string) {
 <style scoped>
 .home-page {
   min-height: 100vh;
-  padding: 72px 16px 156px;
+  padding: 72px 16px calc(156px + env(safe-area-inset-bottom));
   box-sizing: border-box;
   background: #fff4ea;
 }
@@ -281,6 +281,8 @@ function go(url: string, entry: string) {
   font-size: 13px;
   font-weight: 800;
   color: #333333;
+  line-height: 1.25;
+  word-break: keep-all;
 }
 
 .step-desc {
@@ -288,13 +290,14 @@ function go(url: string, entry: string) {
   font-size: 11px;
   line-height: 1.4;
   color: #858585;
+  word-break: break-word;
 }
 
 .fixed-cta {
   position: fixed;
   left: 16px;
   right: 16px;
-  bottom: 88px;
+  bottom: calc(88px + env(safe-area-inset-bottom));
   z-index: 25;
   height: 58px;
   border-radius: 30px;

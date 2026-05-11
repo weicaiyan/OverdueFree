@@ -39,8 +39,8 @@ function go(url: string) {
   z-index: 20;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  height: 78px;
-  padding: 8px 8px 14px;
+  height: calc(78px + env(safe-area-inset-bottom));
+  padding: 8px 8px calc(14px + env(safe-area-inset-bottom));
   box-sizing: border-box;
   background: rgba(255, 247, 250, 0.96);
   border-top: 1px solid rgba(0, 0, 0, 0.04);
@@ -67,7 +67,11 @@ function go(url: string) {
 }
 
 .tab-label {
+  width: 100%;
   font-size: 12px;
+  line-height: 1.2;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .tab-item.active {

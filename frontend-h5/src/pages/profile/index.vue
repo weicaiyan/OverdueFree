@@ -73,7 +73,7 @@ function confirmLogout() {
 <style scoped>
 .profile-page {
   min-height: 100vh;
-  padding-bottom: 156px;
+  padding-bottom: calc(156px + env(safe-area-inset-bottom));
   box-sizing: border-box;
   background: #eeeeee;
 }
@@ -117,8 +117,12 @@ function confirmLogout() {
 
 .menu-extra {
   flex: 1;
+  min-width: 0;
   text-align: right;
   color: #a5a5a5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .danger .menu-icon,
@@ -137,7 +141,7 @@ function confirmLogout() {
   position: fixed;
   left: 16px;
   right: 16px;
-  bottom: 88px;
+  bottom: calc(88px + env(safe-area-inset-bottom));
   z-index: 25;
   height: 58px;
   border-radius: 30px;

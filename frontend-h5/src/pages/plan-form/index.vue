@@ -159,14 +159,14 @@ async function submit() {
 <style scoped>
 .plan-page {
   min-height: 100vh;
-  padding-bottom: 96px;
+  padding-bottom: calc(116px + env(safe-area-inset-bottom));
   box-sizing: border-box;
   background: #efefef;
 }
 
 .panel {
   margin-top: 18px;
-  padding: 26px 18px 120px;
+  padding: 26px 18px calc(120px + env(safe-area-inset-bottom));
   border-radius: 16px 16px 0 0;
   background: #ffffff;
 }
@@ -232,7 +232,7 @@ async function submit() {
   position: fixed;
   left: 16px;
   right: 16px;
-  bottom: 24px;
+  bottom: calc(24px + env(safe-area-inset-bottom));
   z-index: 25;
   height: 58px;
   border-radius: 30px;
