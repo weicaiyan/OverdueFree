@@ -100,7 +100,7 @@ async function login() {
 <style scoped>
 .login-page {
   min-height: 100vh;
-  padding: 96px 24px 40px;
+  padding: calc(96px + env(safe-area-inset-top)) 24px calc(40px + env(safe-area-inset-bottom));
   box-sizing: border-box;
   background: #fff4ea;
 }
@@ -111,6 +111,7 @@ async function login() {
   font-size: 34px;
   font-weight: 900;
   color: #191919;
+  line-height: 1.2;
 }
 
 .login-card {

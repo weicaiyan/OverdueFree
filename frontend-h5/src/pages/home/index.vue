@@ -165,7 +165,7 @@ function go(url: string, entry: string) {
 <style scoped>
 .home-page {
   min-height: 100vh;
-  padding: 72px 16px calc(156px + env(safe-area-inset-bottom));
+  padding: calc(72px + env(safe-area-inset-top)) 16px calc(156px + env(safe-area-inset-bottom));
   box-sizing: border-box;
   background: #fff4ea;
 }

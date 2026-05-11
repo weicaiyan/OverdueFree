@@ -108,7 +108,7 @@ function clear() {
 <style scoped>
 .calculator-page {
   min-height: 100vh;
-  padding-bottom: 36px;
+  padding-bottom: calc(36px + env(safe-area-inset-bottom));
   background: #202932;
 }
 
@@ -151,6 +151,7 @@ function clear() {
   text-align: center;
   color: #ff1f1f;
   font-size: 16px;
+  line-height: 1.5;
 }
 
 .actions {
@@ -202,5 +203,6 @@ function clear() {
   text-align: center;
   color: #777777;
   font-size: 14px;
+  line-height: 1.5;
 }
 </style>
