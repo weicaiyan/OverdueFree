@@ -48,6 +48,12 @@
           <p>{{ sectionDescription }}</p>
         </div>
         <div class="header-user">
+          <el-tooltip :content="healthTooltip" placement="bottom">
+            <el-button class="health-indicator" :loading="healthLoading" text @click="loadHealth">
+              <span :class="['health-dot', healthDotClass]" />
+              <span>{{ healthLabel }}</span>
+            </el-button>
+          </el-tooltip>
           <el-tag :type="isBoss ? 'danger' : 'info'" effect="light">{{ me?.role }}</el-tag>
           <span>{{ me?.displayName }}</span>
           <el-button link type="danger" @click="handleLogout">退出登录</el-button>
@@ -489,6 +495,7 @@ import {
   type ArticleItem,
   type AssetResource,
   type CustomerHistory,
+  type HealthResult,
   type LeadHistoryItem,
   type LeadListItem,
   type SuccessCaseItem
@@ -507,6 +514,43 @@ const activeSection = ref<SectionKey>('leads')
 
 const isLoggedIn = computed(() => Boolean(token.value && me.value))
 const isBoss = computed(() => me.value?.role === 'BOSS')
+const healthLoading = ref(false)
+const health = ref<HealthResult | null>(null)
+const healthError = ref('')
+const healthLabel = computed(() => {
+  if (healthLoading.value) {
+    return '检查中'
+  }
+  if (healthError.value) {
+    return '服务未知'
+  }
+  if (!health.value) {
+    return '未检查'
+  }
+  if (health.value.overallStatus === 'UP') {
+    return '服务正常'
+  }
+  if (health.value.databaseStatus !== 'UP') {
+    return '数据库异常'
+  }
+  return '服务异常'
+})
+const healthDotClass = computed(() => {
+  if (healthError.value || !health.value) {
+    return 'health-dot--unknown'
+  }
+  return health.value.overallStatus === 'UP' ? 'health-dot--up' : 'health-dot--down'
+})
+const healthTooltip = computed(() => {
+  if (healthError.value) {
+    return healthError.value
+  }
+  if (!health.value) {
+    return '点击检查后端和数据库连接'
+  }
+  const databaseName = health.value.databaseProductName || '数据库'
+  return `${health.value.message || '状态已刷新'}｜${databaseName}: ${health.value.databaseStatus}｜${health.value.checkedAt || ''}`
+})
 const sectionTitle = computed(() => {
   const titles: Record<SectionKey, string> = {
     leads: '线索管理',
@@ -636,6 +680,7 @@ onMounted(async () => {
 async function bootstrap() {
   try {
     me.value = await adminApi.me()
+    await loadHealth()
     await loadCurrentSection()
   } catch (error) {
     clearSession()
@@ -675,6 +720,21 @@ function clearSession() {
   clearAdminToken()
   token.value = ''
   me.value = null
+  health.value = null
+  healthError.value = ''
+}
+
+async function loadHealth() {
+  healthLoading.value = true
+  healthError.value = ''
+  try {
+    health.value = await adminApi.health()
+  } catch (error) {
+    health.value = null
+    healthError.value = getErrorMessage(error)
+  } finally {
+    healthLoading.value = false
+  }
 }
 
 async function handleSectionSelect(section: string) {
@@ -1264,6 +1324,35 @@ function getErrorMessage(error: unknown) {
   align-items: center;
   gap: 12px;
   color: #50545f;
+}
+
+.health-indicator {
+  height: 32px;
+  padding: 0 10px;
+  color: #50545f;
+  background: #f7f8fa;
+  border: 1px solid #eceef2;
+  border-radius: 16px;
+}
+
+.health-dot {
+  width: 8px;
+  height: 8px;
+  display: inline-block;
+  margin-right: 6px;
+  border-radius: 50%;
+}
+
+.health-dot--up {
+  background: #28b95f;
+}
+
+.health-dot--down {
+  background: #f4524a;
+}
+
+.health-dot--unknown {
+  background: #a8adb7;
 }
 
 .admin-main {

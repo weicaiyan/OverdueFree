@@ -153,6 +153,16 @@ export interface AdminUserItem {
   updatedAt?: string
 }
 
+export interface HealthResult {
+  overallStatus: string
+  applicationStatus: string
+  databaseStatus: string
+  databaseProductName?: string
+  message?: string
+  timeZone: string
+  checkedAt?: string
+}
+
 export interface ExportBlobResult {
   blob: Blob
   filename: string
@@ -305,6 +315,7 @@ async function safeFetch(input: RequestInfo | URL, init?: RequestInit) {
 }
 
 export const adminApi = {
+  health: () => request<HealthResult>('/api/health'),
   login: (payload: { username: string; password: string }) =>
     request<AdminLoginResult>('/api/admin/auth/login', { method: 'POST', body: payload }),
   logout: () => request<void>('/api/admin/auth/logout', { method: 'POST' }),
