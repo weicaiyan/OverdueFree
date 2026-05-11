@@ -105,6 +105,12 @@ function next() {
   }
 }
 
+function prev() {
+  if (step.value > 0) {
+    step.value -= 1
+  }
+}
+
 async function submit() {
   if (submitted.value) {
     qrVisible.value = true
@@ -155,6 +161,7 @@ function resetForm() {
       <view v-if="step > 1" class="bubble user">{{ form.region }}</view>
       <view v-if="step > 2" class="bubble user">{{ form.debtAmount }}元</view>
       <view v-if="step > 3" class="bubble user">{{ debtTypes.find((item) => item.value === form.debtType)?.label }}</view>
+      <view v-if="submitted && form.debtDescription" class="bubble user">{{ form.debtDescription }}</view>
       <view class="bubble bot">{{ question }}</view>
       <view v-if="submitted" class="bubble bot success-bubble">信息已收到，人工顾问会结合您的情况做初步评估。</view>
     </view>
@@ -175,10 +182,13 @@ function resetForm() {
         </button>
       </view>
       <textarea v-if="step === 4" v-model="form.debtDescription" class="textarea" placeholder="可简单说明逾期平台和当前情况" />
-      <button v-if="step < 4" class="send-button" @click="next">下一步</button>
-      <button v-else class="send-button" :class="{ disabled: submitting }" @click="submit">
-        {{ submitting ? '提交中...' : '提交' }}
-      </button>
+      <view class="step-actions">
+        <button v-if="step > 0" class="secondary-button" @click="prev">上一步</button>
+        <button v-if="step < 4" class="send-button" :class="{ compact: step > 0 }" @click="next">下一步</button>
+        <button v-else class="send-button" :class="{ compact: step > 0, disabled: submitting }" @click="submit">
+          {{ submitting ? '提交中...' : '提交' }}
+        </button>
+      </view>
     </view>
     <view v-else class="input-panel success-panel">
       <button class="send-button" @click="qrVisible = true">查看顾问二维码</button>
@@ -276,15 +286,34 @@ function resetForm() {
   background: #f75a50;
 }
 
-.send-button {
+.step-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.send-button,
+.secondary-button {
   width: 100%;
   height: 48px;
-  margin-top: 12px;
   border-radius: 24px;
-  color: #ffffff;
-  background: #f75a50;
   font-size: 16px;
   font-weight: 800;
+}
+
+.send-button {
+  color: #ffffff;
+  background: #f75a50;
+}
+
+.send-button.compact,
+.secondary-button {
+  flex: 1;
+}
+
+.secondary-button {
+  color: #f75a50;
+  background: #ffffff;
 }
 
 .send-button.disabled {
