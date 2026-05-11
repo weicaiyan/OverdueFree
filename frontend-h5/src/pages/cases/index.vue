@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import BottomTabs from '../../components/BottomTabs.vue'
 import PageHeader from '../../components/PageHeader.vue'
@@ -13,26 +13,54 @@ const cases = ref<SuccessCaseItem[]>([])
 const homeData = ref<HomeData>({ assets: {}, serviceSteps: [] })
 const qrVisible = ref(false)
 const loading = ref(false)
+const loadingMore = ref(false)
 const errorText = ref('')
+const page = ref(1)
+const pageSize = 10
+const total = ref(0)
+
+const hasMore = computed(() => cases.value.length < total.value)
 
 onShow(async () => {
   if (!(await requireLogin())) {
     return
   }
-  loadData()
+  loadData(true)
 })
 
-async function loadData() {
-  loading.value = true
-  errorText.value = ''
+async function loadData(reset = true) {
+  if (!reset && (loading.value || loadingMore.value || !hasMore.value)) {
+    return
+  }
+  const nextPage = reset ? 1 : page.value + 1
+  if (reset) {
+    loading.value = true
+    errorText.value = ''
+  } else {
+    loadingMore.value = true
+  }
   try {
-    const [casePage, home] = await Promise.all([api.cases(1, 20), api.home()])
-    cases.value = casePage.list
-    homeData.value = home
+    if (reset) {
+      const [casePage, home] = await Promise.all([api.cases(nextPage, pageSize), api.home()])
+      cases.value = casePage.list
+      homeData.value = home
+      total.value = casePage.total
+      page.value = casePage.page
+    } else {
+      const casePage = await api.cases(nextPage, pageSize)
+      cases.value = cases.value.concat(casePage.list)
+      total.value = casePage.total
+      page.value = casePage.page
+    }
   } catch (error) {
-    errorText.value = '案例加载失败，请检查后端服务或稍后重试'
+    if (reset) {
+      errorText.value = '案例加载失败，请检查后端服务或稍后重试'
+    } else {
+      uni.showToast({ title: '加载更多失败', icon: 'none' })
+    }
   } finally {
     loading.value = false
+    loadingMore.value = false
   }
 }
 
@@ -90,6 +118,10 @@ function openApply(id?: number) {
         <view class="info-row">处理方案：<text class="plan">{{ item.handlingPlan || '人工评估后确认' }}</text></view>
         <button class="detail-link" @click="goDetail(item.id)">查看详情</button>
       </view>
+      <button v-if="hasMore" class="load-more" :class="{ disabled: loadingMore }" @click="loadData(false)">
+        {{ loadingMore ? '加载中...' : '加载更多案例' }}
+      </button>
+      <view v-else class="list-end">已展示全部案例</view>
     </view>
     <button class="fixed-cta" @click="openApply()">领取债务减免延期方案</button>
     <WechatQrModal
@@ -199,6 +231,25 @@ function openApply(id?: number) {
   color: #f75a50;
   font-size: 14px;
   text-align: left;
+}
+
+.load-more {
+  height: 44px;
+  border-radius: 22px;
+  color: #f75a50;
+  background: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.load-more.disabled {
+  opacity: 0.7;
+}
+
+.list-end {
+  text-align: center;
+  color: #9a9a9a;
+  font-size: 13px;
 }
 
 .fixed-cta {

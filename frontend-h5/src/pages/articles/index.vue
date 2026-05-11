@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import BottomTabs from '../../components/BottomTabs.vue'
 import PageHeader from '../../components/PageHeader.vue'
@@ -10,24 +10,46 @@ import type { ArticleItem } from '../../types'
 
 const articles = ref<ArticleItem[]>([])
 const loading = ref(false)
+const loadingMore = ref(false)
 const errorText = ref('')
+const page = ref(1)
+const pageSize = 10
+const total = ref(0)
+
+const hasMore = computed(() => articles.value.length < total.value)
 
 onShow(async () => {
   if (!(await requireLogin())) {
     return
   }
-  loadArticles()
+  loadArticles(true)
 })
 
-async function loadArticles() {
-  loading.value = true
-  errorText.value = ''
+async function loadArticles(reset = true) {
+  if (!reset && (loading.value || loadingMore.value || !hasMore.value)) {
+    return
+  }
+  const nextPage = reset ? 1 : page.value + 1
+  if (reset) {
+    loading.value = true
+    errorText.value = ''
+  } else {
+    loadingMore.value = true
+  }
   try {
-    articles.value = (await api.articles(1, 20)).list
+    const articlePage = await api.articles(nextPage, pageSize)
+    articles.value = reset ? articlePage.list : articles.value.concat(articlePage.list)
+    total.value = articlePage.total
+    page.value = articlePage.page
   } catch (error) {
-    errorText.value = '资讯加载失败，请检查后端服务或稍后重试'
+    if (reset) {
+      errorText.value = '资讯加载失败，请检查后端服务或稍后重试'
+    } else {
+      uni.showToast({ title: '加载更多失败', icon: 'none' })
+    }
   } finally {
     loading.value = false
+    loadingMore.value = false
   }
 }
 
@@ -68,6 +90,10 @@ function goDetail(id: number) {
         </view>
         <view class="arrow">›</view>
       </button>
+      <button v-if="hasMore" class="load-more" :class="{ disabled: loadingMore }" @click="loadArticles(false)">
+        {{ loadingMore ? '加载中...' : '加载更多资讯' }}
+      </button>
+      <view v-else class="list-end">已展示全部资讯</view>
     </view>
     <BottomTabs active="articles" />
   </view>
@@ -142,5 +168,24 @@ function goDetail(id: number) {
   margin-left: 8px;
   color: #999999;
   font-size: 34px;
+}
+
+.load-more {
+  height: 44px;
+  border-radius: 22px;
+  color: #f75a50;
+  background: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.load-more.disabled {
+  opacity: 0.7;
+}
+
+.list-end {
+  text-align: center;
+  color: #9a9a9a;
+  font-size: 13px;
 }
 </style>
