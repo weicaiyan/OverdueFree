@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { api } from '../../services/api'
+import { api, getErrorMessage } from '../../services/api'
 import { isPhone, saveLoginToken } from '../../services/auth'
 import { clearCustomerToken, getCustomerToken } from '../../services/storage'
 
@@ -45,7 +45,7 @@ async function sendCode() {
     code.value = result.mockCode
     uni.showToast({ title: '验证码已生成', icon: 'none' })
   } catch (error) {
-    uni.showToast({ title: '验证码获取失败', icon: 'none' })
+    uni.showToast({ title: getErrorMessage(error, '验证码获取失败'), icon: 'none' })
   } finally {
     codeLoading.value = false
   }
@@ -71,7 +71,7 @@ async function login() {
     saveLoginToken(result.token)
     uni.reLaunch({ url: '/pages/home/index' })
   } catch (error) {
-    uni.showToast({ title: '登录失败', icon: 'none' })
+    uni.showToast({ title: getErrorMessage(error, '登录失败'), icon: 'none' })
   } finally {
     loading.value = false
   }

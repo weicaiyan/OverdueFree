@@ -3,7 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import PageHeader from '../../components/PageHeader.vue'
 import WechatQrModal from '../../components/WechatQrModal.vue'
-import { api } from '../../services/api'
+import { api, getErrorMessage } from '../../services/api'
 import { requireLogin } from '../../services/auth'
 import { getStorageObject, removeStorageItem, setStorageObject } from '../../services/storage'
 import type { HomeData, LeadPayload } from '../../types'
@@ -154,7 +154,7 @@ async function submit() {
     uni.showToast({ title: '提交成功', icon: 'none' })
     qrVisible.value = true
   } catch (error) {
-    uni.showToast({ title: '提交失败', icon: 'none' })
+    uni.showToast({ title: getErrorMessage(error, '提交失败'), icon: 'none' })
   } finally {
     submitting.value = false
   }
