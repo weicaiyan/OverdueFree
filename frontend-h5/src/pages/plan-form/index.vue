@@ -1,28 +1,48 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import PageHeader from '../../components/PageHeader.vue'
 import WechatQrModal from '../../components/WechatQrModal.vue'
 import { api } from '../../services/api'
 import { requireLogin } from '../../services/auth'
+import { getStorageObject, removeStorageItem, setStorageObject } from '../../services/storage'
 import type { HomeData, LeadPayload } from '../../types'
+
+const PLAN_FORM_DRAFT_KEY = 'overduefree_plan_form_draft'
+
+interface PlanFormDraft {
+  surname: string
+  region: string
+  debtAmount: string
+  debtType: string
+  debtDescription: string
+  ageRange: string
+  jobStatus: string
+  creditStatus: string
+  monthlyIncomeRange: string
+  monthlyExpenseRange: string
+}
+
+function defaultForm(): PlanFormDraft {
+  return {
+    surname: '',
+    region: '',
+    debtAmount: '',
+    debtType: 'ONLINE_LOAN',
+    debtDescription: '',
+    ageRange: '26-35岁',
+    jobStatus: '稳定工作',
+    creditStatus: '一般',
+    monthlyIncomeRange: '5000-8000',
+    monthlyExpenseRange: '2000-3000'
+  }
+}
 
 const homeData = ref<HomeData>({ assets: {}, serviceSteps: [] })
 const qrVisible = ref(false)
 const submitting = ref(false)
 const submitted = ref(false)
-const form = ref({
-  surname: '',
-  region: '',
-  debtAmount: '',
-  debtType: 'ONLINE_LOAN',
-  debtDescription: '',
-  ageRange: '26-35岁',
-  jobStatus: '稳定工作',
-  creditStatus: '一般',
-  monthlyIncomeRange: '5000-8000',
-  monthlyExpenseRange: '2000-3000'
-})
+const form = ref(defaultForm())
 
 const groups = [
   { key: 'ageRange', title: '年龄', options: ['18-25岁', '26-35岁', '36-45岁', '45以上'] },
@@ -47,16 +67,40 @@ const submitText = computed(() => {
   return submitted.value ? '查看顾问二维码' : '获取规划方案'
 })
 
+watch(
+  form,
+  (draft) => {
+    if (!submitted.value) {
+      setStorageObject(PLAN_FORM_DRAFT_KEY, draft)
+    }
+  },
+  { deep: true }
+)
+
 onShow(async () => {
   if (!(await requireLogin())) {
     return
   }
+  restoreDraft()
   try {
     homeData.value = await api.home()
   } catch (error) {
     uni.showToast({ title: '顾问二维码加载失败', icon: 'none' })
   }
 })
+
+function restoreDraft() {
+  if (submitted.value) {
+    return
+  }
+  const draft = getStorageObject<PlanFormDraft | null>(PLAN_FORM_DRAFT_KEY, null)
+  if (draft) {
+    form.value = {
+      ...defaultForm(),
+      ...draft
+    }
+  }
+}
 
 function choose(key: string, value: string) {
   ;(form.value as Record<string, string>)[key] = value
@@ -95,6 +139,7 @@ async function submit() {
   try {
     await api.submitLead(payload)
     submitted.value = true
+    removeStorageItem(PLAN_FORM_DRAFT_KEY)
     uni.showToast({ title: '已收到，人工将结合情况评估', icon: 'none' })
     qrVisible.value = true
   } catch (error) {
@@ -102,6 +147,13 @@ async function submit() {
   } finally {
     submitting.value = false
   }
+}
+
+function resetForm() {
+  submitted.value = false
+  qrVisible.value = false
+  form.value = defaultForm()
+  removeStorageItem(PLAN_FORM_DRAFT_KEY)
 }
 </script>
 
@@ -150,6 +202,7 @@ async function submit() {
       <view v-if="submitted" class="success-card">
         信息已收到，人工顾问将结合您的情况做初步评估。您可以继续查看顾问二维码。
       </view>
+      <button v-if="submitted" class="reset-button" @click="resetForm">重新填写</button>
     </view>
     <button class="fixed-cta" :class="{ submitted }" @click="submit">{{ submitText }}</button>
     <WechatQrModal :visible="qrVisible" :asset="homeData.assets.wechatQr" source-page="PLAN_FORM" @close="qrVisible = false" />
@@ -254,5 +307,16 @@ async function submit() {
   background: #fff0ee;
   font-size: 14px;
   line-height: 1.6;
+}
+
+.reset-button {
+  width: 100%;
+  height: 44px;
+  margin-top: 12px;
+  border-radius: 22px;
+  color: #f75a50;
+  background: #fff7f6;
+  font-size: 15px;
+  font-weight: 700;
 }
 </style>

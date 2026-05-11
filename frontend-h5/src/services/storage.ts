@@ -11,3 +11,26 @@ export function setCustomerToken(token: string) {
 export function clearCustomerToken() {
   uni.removeStorageSync(CUSTOMER_TOKEN_KEY)
 }
+
+export function getStorageObject<T>(key: string, fallback: T): T {
+  const value = uni.getStorageSync(key)
+  if (!value) {
+    return fallback
+  }
+  if (typeof value !== 'string') {
+    return value as T
+  }
+  try {
+    return JSON.parse(value) as T
+  } catch (error) {
+    return fallback
+  }
+}
+
+export function setStorageObject<T>(key: string, value: T) {
+  uni.setStorageSync(key, JSON.stringify(value))
+}
+
+export function removeStorageItem(key: string) {
+  uni.removeStorageSync(key)
+}

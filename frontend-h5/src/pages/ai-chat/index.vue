@@ -1,24 +1,42 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import PageHeader from '../../components/PageHeader.vue'
 import WechatQrModal from '../../components/WechatQrModal.vue'
 import { api } from '../../services/api'
 import { requireLogin } from '../../services/auth'
+import { getStorageObject, removeStorageItem, setStorageObject } from '../../services/storage'
 import type { HomeData, LeadPayload } from '../../types'
+
+const AI_CHAT_DRAFT_KEY = 'overduefree_ai_chat_draft'
+
+interface ChatDraft {
+  step: number
+  form: {
+    surname: string
+    region: string
+    debtAmount: string
+    debtType: string
+    debtDescription: string
+  }
+}
+
+function defaultForm() {
+  return {
+    surname: '',
+    region: '',
+    debtAmount: '',
+    debtType: 'ONLINE_LOAN',
+    debtDescription: ''
+  }
+}
 
 const step = ref(0)
 const submitting = ref(false)
 const submitted = ref(false)
 const qrVisible = ref(false)
 const homeData = ref<HomeData>({ assets: {}, serviceSteps: [] })
-const form = ref({
-  surname: '',
-  region: '',
-  debtAmount: '',
-  debtType: 'ONLINE_LOAN',
-  debtDescription: ''
-})
+const form = ref(defaultForm())
 
 const debtTypes = [
   { label: '网贷', value: 'ONLINE_LOAN' },
@@ -32,16 +50,42 @@ const question = computed(() => {
   return ['怎么称呼您？', '您所在地区是哪里？', '大概逾期金额是多少？', '主要债务类型？', '还有什么想补充？'][step.value]
 })
 
+watch(
+  () => ({ step: step.value, form: form.value }),
+  (draft) => {
+    if (!submitted.value) {
+      setStorageObject(AI_CHAT_DRAFT_KEY, draft)
+    }
+  },
+  { deep: true }
+)
+
 onShow(async () => {
   if (!(await requireLogin())) {
     return
   }
+  restoreDraft()
   try {
     homeData.value = await api.home()
   } catch (error) {
     uni.showToast({ title: '顾问二维码加载失败', icon: 'none' })
   }
 })
+
+function restoreDraft() {
+  if (submitted.value) {
+    return
+  }
+  const draft = getStorageObject<ChatDraft | null>(AI_CHAT_DRAFT_KEY, null)
+  if (!draft) {
+    return
+  }
+  step.value = Math.min(Math.max(Number(draft.step) || 0, 0), 4)
+  form.value = {
+    ...defaultForm(),
+    ...draft.form
+  }
+}
 
 function next() {
   if (step.value === 0 && !form.value.surname.trim()) {
@@ -81,6 +125,7 @@ async function submit() {
   try {
     await api.submitLead(payload)
     submitted.value = true
+    removeStorageItem(AI_CHAT_DRAFT_KEY)
     uni.showToast({ title: '提交成功', icon: 'none' })
     qrVisible.value = true
   } catch (error) {
@@ -95,12 +140,9 @@ function resetForm() {
   submitted.value = false
   qrVisible.value = false
   form.value = {
-    surname: '',
-    region: '',
-    debtAmount: '',
-    debtType: 'ONLINE_LOAN',
-    debtDescription: ''
+    ...defaultForm()
   }
+  removeStorageItem(AI_CHAT_DRAFT_KEY)
 }
 </script>
 
