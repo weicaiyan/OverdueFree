@@ -1,27 +1,49 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import PageHeader from '../../components/PageHeader.vue'
 import WechatQrModal from '../../components/WechatQrModal.vue'
-import { api } from '../../services/api'
+import { api, getErrorMessage } from '../../services/api'
 import { requireLogin } from '../../services/auth'
+import { getStorageObject, removeStorageItem, setStorageObject } from '../../services/storage'
 import type { HomeData, LeadPayload } from '../../types'
+import { parseDebtAmount, validateLeadRequiredFields } from '../../utils/leadValidation'
+
+const PLAN_FORM_DRAFT_KEY = 'overduefree_plan_form_draft'
+
+interface PlanFormDraft {
+  surname: string
+  region: string
+  debtAmount: string
+  debtType: string
+  debtDescription: string
+  ageRange: string
+  jobStatus: string
+  creditStatus: string
+  monthlyIncomeRange: string
+  monthlyExpenseRange: string
+}
+
+function defaultForm(): PlanFormDraft {
+  return {
+    surname: '',
+    region: '',
+    debtAmount: '',
+    debtType: 'ONLINE_LOAN',
+    debtDescription: '',
+    ageRange: '26-35岁',
+    jobStatus: '稳定工作',
+    creditStatus: '一般',
+    monthlyIncomeRange: '5000-8000',
+    monthlyExpenseRange: '2000-3000'
+  }
+}
 
 const homeData = ref<HomeData>({ assets: {}, serviceSteps: [] })
 const qrVisible = ref(false)
 const submitting = ref(false)
-const form = ref({
-  surname: '',
-  region: '',
-  debtAmount: '',
-  debtType: 'ONLINE_LOAN',
-  debtDescription: '',
-  ageRange: '26-35岁',
-  jobStatus: '稳定工作',
-  creditStatus: '一般',
-  monthlyIncomeRange: '5000-8000',
-  monthlyExpenseRange: '2000-3000'
-})
+const submitted = ref(false)
+const form = ref(defaultForm())
 
 const groups = [
   { key: 'ageRange', title: '年龄', options: ['18-25岁', '26-35岁', '36-45岁', '45以上'] },
@@ -39,12 +61,47 @@ const debtTypes = [
   { label: '其他', value: 'OTHER' }
 ]
 
+const submitText = computed(() => {
+  if (submitting.value) {
+    return '提交中...'
+  }
+  return submitted.value ? '查看顾问二维码' : '获取规划方案'
+})
+
+watch(
+  form,
+  (draft) => {
+    if (!submitted.value) {
+      setStorageObject(PLAN_FORM_DRAFT_KEY, draft)
+    }
+  },
+  { deep: true }
+)
+
 onShow(async () => {
   if (!(await requireLogin())) {
     return
   }
-  homeData.value = await api.home()
+  restoreDraft()
+  try {
+    homeData.value = await api.home()
+  } catch (error) {
+    uni.showToast({ title: '顾问二维码加载失败', icon: 'none' })
+  }
 })
+
+function restoreDraft() {
+  if (submitted.value) {
+    return
+  }
+  const draft = getStorageObject<PlanFormDraft | null>(PLAN_FORM_DRAFT_KEY, null)
+  if (draft) {
+    form.value = {
+      ...defaultForm(),
+      ...draft
+    }
+  }
+}
 
 function choose(key: string, value: string) {
   ;(form.value as Record<string, string>)[key] = value
@@ -55,18 +112,26 @@ function selected(key: string, value: string) {
 }
 
 async function submit() {
-  if (!form.value.surname || !form.value.region || Number(form.value.debtAmount) <= 0) {
-    uni.showToast({ title: '请填写必填信息', icon: 'none' })
+  if (submitted.value) {
+    qrVisible.value = true
+    return
+  }
+  if (submitting.value) {
+    return
+  }
+  const message = validateLeadRequiredFields(form.value)
+  if (message) {
+    uni.showToast({ title: message, icon: 'none' })
     return
   }
   submitting.value = true
   const payload: LeadPayload = {
     source: 'PLAN_ASSESSMENT',
-    surname: form.value.surname,
-    region: form.value.region,
-    debtAmount: Number(form.value.debtAmount),
+    surname: form.value.surname.trim(),
+    region: form.value.region.trim(),
+    debtAmount: parseDebtAmount(form.value.debtAmount),
     debtType: form.value.debtType,
-    debtDescription: form.value.debtDescription,
+    debtDescription: form.value.debtDescription.trim(),
     ageRange: form.value.ageRange,
     jobStatus: form.value.jobStatus,
     creditStatus: form.value.creditStatus,
@@ -75,13 +140,22 @@ async function submit() {
   }
   try {
     await api.submitLead(payload)
+    submitted.value = true
+    removeStorageItem(PLAN_FORM_DRAFT_KEY)
     uni.showToast({ title: '已收到，人工将结合情况评估', icon: 'none' })
     qrVisible.value = true
   } catch (error) {
-    uni.showToast({ title: '提交失败', icon: 'none' })
+    uni.showToast({ title: getErrorMessage(error, '提交失败'), icon: 'none' })
   } finally {
     submitting.value = false
   }
+}
+
+function resetForm() {
+  submitted.value = false
+  qrVisible.value = false
+  form.value = defaultForm()
+  removeStorageItem(PLAN_FORM_DRAFT_KEY)
 }
 </script>
 
@@ -127,8 +201,12 @@ async function submit() {
 
       <view class="field-title">补充描述</view>
       <textarea v-model="form.debtDescription" class="textarea" placeholder="可简单说明逾期平台、收入和当前压力" />
+      <view v-if="submitted" class="success-card">
+        信息已收到，人工顾问将结合您的情况做初步评估。您可以继续查看顾问二维码。
+      </view>
+      <button v-if="submitted" class="reset-button" @click="resetForm">重新填写</button>
     </view>
-    <button class="fixed-cta" @click="submit">{{ submitting ? '提交中...' : '获取规划方案' }}</button>
+    <button class="fixed-cta" :class="{ submitted }" @click="submit">{{ submitText }}</button>
     <WechatQrModal :visible="qrVisible" :asset="homeData.assets.wechatQr" source-page="PLAN_FORM" @close="qrVisible = false" />
   </view>
 </template>
@@ -136,14 +214,14 @@ async function submit() {
 <style scoped>
 .plan-page {
   min-height: 100vh;
-  padding-bottom: 96px;
+  padding-bottom: calc(116px + env(safe-area-inset-bottom));
   box-sizing: border-box;
   background: #efefef;
 }
 
 .panel {
   margin-top: 18px;
-  padding: 26px 18px 120px;
+  padding: 26px 18px calc(120px + env(safe-area-inset-bottom));
   border-radius: 16px 16px 0 0;
   background: #ffffff;
 }
@@ -209,7 +287,7 @@ async function submit() {
   position: fixed;
   left: 16px;
   right: 16px;
-  bottom: 24px;
+  bottom: calc(24px + env(safe-area-inset-bottom));
   z-index: 25;
   height: 58px;
   border-radius: 30px;
@@ -217,5 +295,30 @@ async function submit() {
   background: #ef5a4f;
   font-size: 18px;
   font-weight: 800;
+}
+
+.fixed-cta.submitted {
+  background: #45b854;
+}
+
+.success-card {
+  margin-top: 18px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  color: #b83b32;
+  background: #fff0ee;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.reset-button {
+  width: 100%;
+  height: 44px;
+  margin-top: 12px;
+  border-radius: 22px;
+  color: #f75a50;
+  background: #fff7f6;
+  font-size: 15px;
+  font-weight: 700;
 }
 </style>

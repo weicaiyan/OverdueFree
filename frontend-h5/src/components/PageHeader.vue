@@ -28,15 +28,19 @@ function goBack() {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 64px;
-  padding: 28px 18px 0;
+  height: calc(64px + env(safe-area-inset-top));
+  padding: calc(28px + env(safe-area-inset-top)) 18px 0;
   box-sizing: border-box;
 }
 
 .header-title {
+  max-width: calc(100vw - 112px);
+  overflow: hidden;
   font-size: 20px;
   font-weight: 700;
   color: #111111;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .back-button {

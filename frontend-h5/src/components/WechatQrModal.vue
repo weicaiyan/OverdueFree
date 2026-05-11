@@ -50,7 +50,7 @@ watch(
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: calc(24px + env(safe-area-inset-top)) 24px calc(24px + env(safe-area-inset-bottom));
   background: rgba(0, 0, 0, 0.55);
   box-sizing: border-box;
 }
@@ -58,6 +58,8 @@ watch(
 .modal-panel {
   width: 100%;
   max-width: 320px;
+  max-height: 88vh;
+  overflow-y: auto;
   padding: 28px 24px 22px;
   box-sizing: border-box;
   border-radius: 20px;
@@ -69,12 +71,14 @@ watch(
   font-size: 24px;
   font-weight: 800;
   color: #222222;
+  line-height: 1.25;
 }
 
 .modal-subtitle {
   margin-top: 10px;
   font-size: 15px;
   color: #575757;
+  line-height: 1.4;
 }
 
 .qr-image,

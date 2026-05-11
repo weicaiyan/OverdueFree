@@ -21,6 +21,13 @@ export function resolveFileUrl(fileUrl?: string) {
   return `${API_BASE_URL}${fileUrl.startsWith('/') ? fileUrl : `/${fileUrl}`}`
 }
 
+export function getErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error && error.message) {
+    return error.message
+  }
+  return fallback
+}
+
 export function request<T>(url: string, method: HttpMethod = 'GET', data?: object): Promise<T> {
   const token = getCustomerToken()
   return new Promise((resolve, reject) => {
@@ -33,7 +40,7 @@ export function request<T>(url: string, method: HttpMethod = 'GET', data?: objec
         ...(token ? { Authorization: `Bearer ${token}` } : {})
       },
       success: (res) => {
-        const body = res.data as ApiResponse<T>
+        const body = typeof res.data === 'object' && res.data !== null ? (res.data as ApiResponse<T>) : null
         if (body && body.code === 0) {
           resolve(body.data)
           return
@@ -42,7 +49,19 @@ export function request<T>(url: string, method: HttpMethod = 'GET', data?: objec
           clearCustomerToken()
           uni.reLaunch({ url: '/pages/login/index' })
         }
-        reject(new Error(body?.message || '请求失败'))
+        if (body?.message) {
+          reject(new Error(body.message))
+          return
+        }
+        if (res.statusCode >= 500) {
+          reject(new Error('系统繁忙，请稍后重试'))
+          return
+        }
+        if (res.statusCode >= 400) {
+          reject(new Error('请求参数不正确'))
+          return
+        }
+        reject(new Error('请求失败，请稍后重试'))
       },
       fail: (error) => {
         reject(new Error(error.errMsg || '网络异常'))

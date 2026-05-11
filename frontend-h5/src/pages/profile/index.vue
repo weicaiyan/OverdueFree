@@ -21,6 +21,20 @@ onShow(async () => {
     // 个人中心的核心动作是退出登录，首页素材失败不阻塞页面。
   }
 })
+
+function confirmLogout() {
+  uni.showModal({
+    title: '退出登录',
+    content: '确认退出当前手机号登录状态？',
+    confirmText: '退出',
+    confirmColor: '#f75a50',
+    success: (result) => {
+      if (result.confirm) {
+        logout()
+      }
+    }
+  })
+}
 </script>
 
 <template>
@@ -39,17 +53,17 @@ onShow(async () => {
         <view class="menu-icon">▤</view>
         <view class="menu-text">隐私协议</view>
       </view>
-      <button class="menu-item danger" @click="logout">
+      <button class="menu-item danger" @click="confirmLogout">
         <view class="menu-icon">→</view>
         <view class="menu-text">退出登录</view>
       </button>
       <view class="menu-item">
         <view class="menu-icon">✉</view>
         <view class="menu-text">联系我们</view>
-        <view class="menu-extra">lawzxcn@163.com</view>
+        <view class="menu-extra">演示版待配置</view>
       </view>
     </view>
-    <view class="record">备案号：渝ICP备2024021396号-3A</view>
+    <view class="record">演示版暂未配置备案信息</view>
     <button class="fixed-cta" @click="qrVisible = true">领取债务减免延期方案</button>
     <WechatQrModal :visible="qrVisible" :asset="homeData.assets.wechatQr" source-page="PROFILE" @close="qrVisible = false" />
     <BottomTabs active="profile" />
@@ -59,7 +73,7 @@ onShow(async () => {
 <style scoped>
 .profile-page {
   min-height: 100vh;
-  padding-bottom: 156px;
+  padding-bottom: calc(156px + env(safe-area-inset-bottom));
   box-sizing: border-box;
   background: #eeeeee;
 }
@@ -74,10 +88,18 @@ onShow(async () => {
   align-items: center;
   width: 100%;
   min-height: 82px;
+  margin: 0;
   padding: 0 26px;
   box-sizing: border-box;
   border-bottom: 1px solid #eeeeee;
+  border-radius: 0;
+  line-height: 1;
   text-align: left;
+  background: #ffffff;
+}
+
+.menu-item::after {
+  border: 0;
 }
 
 .menu-icon {
@@ -95,8 +117,12 @@ onShow(async () => {
 
 .menu-extra {
   flex: 1;
+  min-width: 0;
   text-align: right;
   color: #a5a5a5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .danger .menu-icon,
@@ -115,7 +141,7 @@ onShow(async () => {
   position: fixed;
   left: 16px;
   right: 16px;
-  bottom: 88px;
+  bottom: calc(88px + env(safe-area-inset-bottom));
   z-index: 25;
   height: 58px;
   border-radius: 30px;
