@@ -7,6 +7,7 @@ import PageState from '../../components/PageState.vue'
 import { api, resolveFileUrl } from '../../services/api'
 import { requireLogin } from '../../services/auth'
 import type { ArticleItem } from '../../types'
+import { formatDate } from '../../utils/format'
 
 const articles = ref<ArticleItem[]>([])
 const loading = ref(false)
@@ -86,7 +87,7 @@ function goDetail(id: number) {
         <view v-else class="cover placeholder">资讯</view>
         <view class="article-main">
           <view class="title">{{ item.title }}</view>
-          <view class="time">更新时间:{{ item.publishTime || '待发布' }}</view>
+          <view class="time">更新时间：{{ formatDate(item.publishTime) }}</view>
         </view>
         <view class="arrow">›</view>
       </button>

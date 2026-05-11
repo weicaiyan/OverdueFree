@@ -7,6 +7,7 @@ import WechatQrModal from '../../components/WechatQrModal.vue'
 import { api, resolveFileUrl } from '../../services/api'
 import { requireLogin } from '../../services/auth'
 import type { ArticleItem, HomeData } from '../../types'
+import { formatDate } from '../../utils/format'
 
 const id = ref(0)
 const detail = ref<ArticleItem | null>(null)
@@ -81,7 +82,7 @@ function openArticleCta() {
     />
     <view v-else-if="detail" class="article">
       <view class="title">{{ detail.title }}</view>
-      <view class="time">{{ detail.publishTime || '' }}</view>
+      <view class="time">更新时间：{{ formatDate(detail.publishTime) }}</view>
       <image v-if="detail.coverUrl" class="cover" mode="aspectFill" :src="resolveFileUrl(detail.coverUrl)" />
       <view class="summary">{{ detail.summary }}</view>
       <view class="content">{{ detail.contentText || detail.summary || '内容待补充。' }}</view>

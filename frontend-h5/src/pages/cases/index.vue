@@ -8,6 +8,7 @@ import WechatQrModal from '../../components/WechatQrModal.vue'
 import { api } from '../../services/api'
 import { requireLogin } from '../../services/auth'
 import type { HomeData, SuccessCaseItem } from '../../types'
+import { formatAmount } from '../../utils/format'
 
 const cases = ref<SuccessCaseItem[]>([])
 const homeData = ref<HomeData>({ assets: {}, serviceSteps: [] })
@@ -114,7 +115,7 @@ function openApply(id?: number) {
         </view>
         <view class="line" />
         <view class="info-row">逾期平台：{{ item.overduePlatforms || '待补充' }}</view>
-        <view class="info-row">逾期金额：<text class="amount">{{ item.overdueAmount || 0 }}</text>元</view>
+        <view class="info-row">逾期金额：<text class="amount">{{ formatAmount(item.overdueAmount) }}</text>元</view>
         <view class="info-row">处理方案：<text class="plan">{{ item.handlingPlan || '人工评估后确认' }}</text></view>
         <button class="detail-link" @click="goDetail(item.id)">查看详情</button>
       </view>
