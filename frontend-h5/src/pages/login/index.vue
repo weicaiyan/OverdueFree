@@ -17,8 +17,12 @@ onShow(async () => {
     return
   }
   try {
-    await api.me()
-    uni.reLaunch({ url: '/pages/home/index' })
+    const me = await api.me()
+    if (me.loggedIn) {
+      uni.reLaunch({ url: '/pages/home/index' })
+      return
+    }
+    clearCustomerToken()
   } catch (error) {
     clearCustomerToken()
   }

@@ -12,7 +12,12 @@ export async function requireLogin() {
     return false
   }
   try {
-    await api.me()
+    const me = await api.me()
+    if (!me.loggedIn) {
+      clearCustomerToken()
+      uni.reLaunch({ url: '/pages/login/index' })
+      return false
+    }
     return true
   } catch (error) {
     clearCustomerToken()
