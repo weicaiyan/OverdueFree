@@ -46,10 +46,10 @@ onShow(async () => {
       <view class="menu-item">
         <view class="menu-icon">✉</view>
         <view class="menu-text">联系我们</view>
-        <view class="menu-extra">lawzxcn@163.com</view>
+        <view class="menu-extra">演示版待配置</view>
       </view>
     </view>
-    <view class="record">备案号：渝ICP备2024021396号-3A</view>
+    <view class="record">演示版暂未配置备案信息</view>
     <button class="fixed-cta" @click="qrVisible = true">领取债务减免延期方案</button>
     <WechatQrModal :visible="qrVisible" :asset="homeData.assets.wechatQr" source-page="PROFILE" @close="qrVisible = false" />
     <BottomTabs active="profile" />
@@ -74,10 +74,18 @@ onShow(async () => {
   align-items: center;
   width: 100%;
   min-height: 82px;
+  margin: 0;
   padding: 0 26px;
   box-sizing: border-box;
   border-bottom: 1px solid #eeeeee;
+  border-radius: 0;
+  line-height: 1;
   text-align: left;
+  background: #ffffff;
+}
+
+.menu-item::after {
+  border: 0;
 }
 
 .menu-icon {

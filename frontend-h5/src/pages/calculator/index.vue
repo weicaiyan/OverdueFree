@@ -92,7 +92,7 @@ function clear() {
       <view class="result-line">每期手续费约：{{ result.monthlyFee }} 元</view>
       <view class="result-line">总手续费约：{{ result.totalFee }} 元</view>
       <view class="result-line">折算年化约：{{ result.annualized }}%</view>
-      <view class="tip">以上计算结果仅供参考。</view>
+      <view class="tip">以上计算结果仅供参考，实际费用以合同和平台规则为准。</view>
     </view>
 
     <view class="intro">
@@ -100,7 +100,7 @@ function clear() {
       <view class="intro-text">
         很多人不知道网贷的实际利率，本工具可帮助你估算手续费折算后的年化水平，便于对还款压力有更清楚的认识。
       </view>
-      <view class="bottom-tip">提示：以上计算结果仅供参考</view>
+      <view class="bottom-tip">提示：本工具只做本地估算，不保存贷款计算明细</view>
     </view>
   </view>
 </template>
