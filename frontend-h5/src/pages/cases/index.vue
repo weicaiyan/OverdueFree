@@ -39,6 +39,17 @@ async function loadData() {
 function goDetail(id: number) {
   uni.navigateTo({ url: `/pages/cases/detail?id=${id}` })
 }
+
+function openApply(id?: number) {
+  api.event({
+    eventType: 'CASE_APPLY',
+    sourcePage: 'CASES',
+    refType: id ? 'SUCCESS_CASE' : undefined,
+    refId: id || null,
+    metadata: id ? { caseId: id } : { source: 'fixedCta' }
+  }).catch(() => undefined)
+  qrVisible.value = true
+}
 </script>
 
 <template>
@@ -71,7 +82,7 @@ function goDetail(id: number) {
             <view class="name">{{ item.displayName }}</view>
             <view class="phone">{{ item.maskedPhone || '号码已脱敏' }}</view>
           </view>
-          <button class="apply-button" @click="qrVisible = true">我也申请</button>
+          <button class="apply-button" @click="openApply(item.id)">我也申请</button>
         </view>
         <view class="line" />
         <view class="info-row">逾期平台：{{ item.overduePlatforms || '待补充' }}</view>
@@ -80,7 +91,7 @@ function goDetail(id: number) {
         <button class="detail-link" @click="goDetail(item.id)">查看详情</button>
       </view>
     </view>
-    <button class="fixed-cta" @click="qrVisible = true">领取债务减免延期方案</button>
+    <button class="fixed-cta" @click="openApply()">领取债务减免延期方案</button>
     <WechatQrModal
       :visible="qrVisible"
       :asset="homeData.assets.wechatQr"

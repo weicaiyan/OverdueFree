@@ -39,6 +39,17 @@ async function loadDetail() {
     loading.value = false
   }
 }
+
+function openArticleCta() {
+  api.event({
+    eventType: 'ARTICLE_CTA',
+    sourcePage: 'ARTICLE_DETAIL',
+    refType: 'ARTICLE',
+    refId: id.value,
+    metadata: { articleId: id.value }
+  }).catch(() => undefined)
+  qrVisible.value = true
+}
 </script>
 
 <template>
@@ -64,7 +75,7 @@ async function loadDetail() {
       <view class="summary">{{ detail.summary }}</view>
       <view class="content">{{ detail.contentText || detail.summary || '内容待补充。' }}</view>
     </view>
-    <button v-if="detail" class="fixed-cta" @click="qrVisible = true">领取债务减免延期方案</button>
+    <button v-if="detail" class="fixed-cta" @click="openArticleCta">领取债务减免延期方案</button>
     <WechatQrModal :visible="qrVisible" :asset="homeData.assets.wechatQr" source-page="ARTICLE_DETAIL" @close="qrVisible = false" />
   </view>
 </template>

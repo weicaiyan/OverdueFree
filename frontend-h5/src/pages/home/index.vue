@@ -59,7 +59,16 @@ function openVideo() {
   videoVisible.value = true
 }
 
-function go(url: string) {
+function trackHomeEntry(entry: string) {
+  api.event({
+    eventType: 'CLICK_HOME_ENTRY',
+    sourcePage: 'HOME',
+    metadata: { entry }
+  }).catch(() => undefined)
+}
+
+function go(url: string, entry: string) {
+  trackHomeEntry(entry)
   uni.navigateTo({ url })
 }
 </script>
@@ -93,7 +102,7 @@ function go(url: string) {
       </button>
 
       <view class="entry-grid">
-        <button class="small-entry" @click="go('/pages/ai-chat/index')">
+        <button class="small-entry" @click="go('/pages/ai-chat/index', 'AI_CHAT')">
           <AssetImage
             :asset="homeData.assets.aiConsultBanner"
             title="AI债务咨询师"
@@ -101,7 +110,7 @@ function go(url: string) {
             tone="blue"
           />
         </button>
-        <button class="small-entry" @click="go('/pages/calculator/index')">
+        <button class="small-entry" @click="go('/pages/calculator/index', 'CALCULATOR')">
           <AssetImage
             :asset="homeData.assets.loanCalculatorBanner"
             title="来算算您的网贷"
@@ -111,7 +120,7 @@ function go(url: string) {
         </button>
       </view>
 
-      <button class="wide-entry" @click="go('/pages/plan-form/index')">
+      <button class="wide-entry" @click="go('/pages/plan-form/index', 'PLAN_FORM')">
         <AssetImage
           :asset="homeData.assets.debtPlanBanner"
           title="规划优化债务"

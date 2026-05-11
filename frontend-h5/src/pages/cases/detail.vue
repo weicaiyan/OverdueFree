@@ -39,6 +39,17 @@ async function loadDetail() {
     loading.value = false
   }
 }
+
+function openApply() {
+  api.event({
+    eventType: 'CASE_APPLY',
+    sourcePage: 'CASE_DETAIL',
+    refType: 'SUCCESS_CASE',
+    refId: id.value,
+    metadata: { caseId: id.value }
+  }).catch(() => undefined)
+  qrVisible.value = true
+}
 </script>
 
 <template>
@@ -65,7 +76,7 @@ async function loadDetail() {
       <view class="item accent">处理方案：{{ detail.handlingPlan || '人工评估后确认' }}</view>
       <view class="content">{{ detail.detailText || '当前案例详情待补充。' }}</view>
     </view>
-    <button v-if="detail" class="fixed-cta" @click="qrVisible = true">领取债务减免延期方案</button>
+    <button v-if="detail" class="fixed-cta" @click="openApply">领取债务减免延期方案</button>
     <WechatQrModal :visible="qrVisible" :asset="homeData.assets.wechatQr" source-page="CASE_DETAIL" @close="qrVisible = false" />
   </view>
 </template>
