@@ -183,7 +183,7 @@ function resetForm() {
       <view v-if="step > 2" class="bubble user">{{ form.debtAmount }}元</view>
       <view v-if="step > 3" class="bubble user">{{ debtTypes.find((item) => item.value === form.debtType)?.label }}</view>
       <view v-if="submitted && form.debtDescription" class="bubble user">{{ form.debtDescription }}</view>
-      <view class="bubble bot">{{ question }}</view>
+      <view v-if="!submitted" class="bubble bot">{{ question }}</view>
       <view v-if="submitted" class="bubble bot success-bubble">信息已收到，人工顾问会结合您的情况做初步评估。</view>
     </view>
 
