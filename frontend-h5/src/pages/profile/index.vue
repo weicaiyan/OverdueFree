@@ -90,10 +90,10 @@ function confirmLogout() {
         <view class="menu-icon">→</view>
         <view class="menu-text">退出登录</view>
       </button>
-      <button class="menu-item" @click="openInfo('contact')">
+      <button class="menu-item" @click="qrVisible = true">
         <view class="menu-icon">✉</view>
         <view class="menu-text">联系我们</view>
-        <view class="menu-extra">演示版待配置</view>
+        <view class="menu-extra">扫码咨询</view>
       </button>
     </view>
     <view class="record">演示版暂未配置备案信息</view>
