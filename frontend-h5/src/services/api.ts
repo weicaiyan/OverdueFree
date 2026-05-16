@@ -85,7 +85,7 @@ export const api = {
     return request<{ token: string; expiresAt: string }>('/api/app/auth/login', 'POST', { phone, code })
   },
   logout() {
-    return request<void>('/api/app/auth/logout', 'POST')
+    return request<void>('/api/app/auth/logout', 'POST', undefined, { authRedirect: false })
   },
   me(options?: RequestOptions) {
     return request<{ loggedIn: boolean }>('/api/app/me', 'GET', undefined, options)
