@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { AssetResource } from '../types'
 import { api, resolveFileUrl } from '../services/api'
 
@@ -14,6 +14,12 @@ const emit = defineEmits<{
 }>()
 
 const imageFailed = ref(false)
+const placeholderText = computed(() => {
+  if (props.asset?.fileUrl && imageFailed.value) {
+    return '二维码暂时无法加载'
+  }
+  return '顾问二维码待配置'
+})
 
 watch(
   () => props.visible,
@@ -45,7 +51,7 @@ watch(
         :src="resolveFileUrl(asset.fileUrl)"
         @error="imageFailed = true"
       />
-      <view v-else class="qr-placeholder">顾问二维码待配置</view>
+      <view v-else class="qr-placeholder">{{ placeholderText }}</view>
       <button class="modal-button" @click="emit('close')">知道了</button>
     </view>
   </view>
