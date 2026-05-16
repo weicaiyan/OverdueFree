@@ -3,7 +3,8 @@ import { computed, onUnmounted, ref, watch } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { api, getErrorMessage } from '../../services/api'
 import { isPhone, saveLoginToken } from '../../services/auth'
-import { clearCustomerToken, clearLoginRedirect, getCustomerToken, getLoginRedirect } from '../../services/storage'
+import { redirectAfterLogin } from '../../services/navigation'
+import { clearCustomerToken, getCustomerToken } from '../../services/storage'
 
 const phone = ref('')
 const code = ref('')
@@ -131,11 +132,6 @@ async function login() {
   }
 }
 
-function redirectAfterLogin() {
-  const redirectUrl = getLoginRedirect()
-  clearLoginRedirect()
-  uni.reLaunch({ url: redirectUrl || '/pages/home/index' })
-}
 </script>
 
 <template>

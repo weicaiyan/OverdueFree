@@ -1,4 +1,5 @@
 import type { ArticleItem, HomeData, LeadPayload, PageResult, SuccessCaseItem } from '../types'
+import { goLoginWithRedirect } from './navigation'
 import { clearCustomerToken, getCustomerToken } from './storage'
 
 interface ApiResponse<T> {
@@ -47,7 +48,7 @@ export function request<T>(url: string, method: HttpMethod = 'GET', data?: objec
         }
         if (body && body.code === 40001) {
           clearCustomerToken()
-          uni.reLaunch({ url: '/pages/login/index' })
+          goLoginWithRedirect()
         }
         if (body?.message) {
           reject(new Error(body.message))
