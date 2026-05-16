@@ -4,7 +4,7 @@ import { onLoad, onShow } from '@dcloudio/uni-app'
 import PageHeader from '../../components/PageHeader.vue'
 import PageState from '../../components/PageState.vue'
 import WechatQrModal from '../../components/WechatQrModal.vue'
-import { api } from '../../services/api'
+import { api, resolveFileUrl } from '../../services/api'
 import { requireLogin } from '../../services/auth'
 import type { HomeData, SuccessCaseItem } from '../../types'
 import { formatAmount } from '../../utils/format'
@@ -15,6 +15,7 @@ const homeData = ref<HomeData>({ assets: {}, serviceSteps: [] })
 const qrVisible = ref(false)
 const loading = ref(false)
 const errorText = ref('')
+const avatarFailed = ref(false)
 
 onLoad((query) => {
   id.value = Number(query?.id || 0)
@@ -38,6 +39,7 @@ async function loadDetail() {
     const [caseDetail, home] = await Promise.all([api.caseDetail(id.value), api.home()])
     detail.value = caseDetail
     homeData.value = home
+    avatarFailed.value = false
   } catch (error) {
     errorText.value = '案例详情加载失败，请稍后重试'
   } finally {
@@ -81,8 +83,22 @@ function openApply() {
       @action="loadDetail"
     />
     <view v-else-if="detail" class="detail-card">
-      <view class="title">{{ detail.displayName }}</view>
-      <view class="meta">{{ detail.maskedPhone || '号码已脱敏' }}</view>
+      <view class="person-head">
+        <view class="avatar">
+          <image
+            v-if="detail.avatarUrl && !avatarFailed"
+            class="avatar-image"
+            mode="aspectFill"
+            :src="resolveFileUrl(detail.avatarUrl)"
+            @error="avatarFailed = true"
+          />
+          <text v-else>人</text>
+        </view>
+        <view class="person-main">
+          <view class="title">{{ detail.displayName }}</view>
+          <view class="meta">{{ detail.maskedPhone || '号码已脱敏' }}</view>
+        </view>
+      </view>
       <view class="item">逾期平台：{{ detail.overduePlatforms || '待补充' }}</view>
       <view class="item">逾期金额：{{ formatAmount(detail.overdueAmount) }}元</view>
       <view class="item accent">处理方案：{{ detail.handlingPlan || '人工评估后确认' }}</view>
@@ -108,9 +124,41 @@ function openApply() {
   background: #ffffff;
 }
 
+.person-head {
+  display: flex;
+  align-items: center;
+}
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  width: 58px;
+  height: 58px;
+  margin-right: 14px;
+  border-radius: 50%;
+  color: #988aa9;
+  background: #eadbff;
+  font-size: 18px;
+}
+
+.avatar-image {
+  width: 100%;
+  height: 100%;
+}
+
+.person-main {
+  flex: 1;
+  min-width: 0;
+}
+
 .title {
   font-size: 24px;
   font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .meta {
