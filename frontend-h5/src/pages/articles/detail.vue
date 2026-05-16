@@ -15,6 +15,7 @@ const homeData = ref<HomeData>({ assets: {}, serviceSteps: [] })
 const qrVisible = ref(false)
 const loading = ref(false)
 const errorText = ref('')
+const coverFailed = ref(false)
 
 onLoad((query) => {
   id.value = Number(query?.id || 0)
@@ -38,6 +39,7 @@ async function loadDetail() {
     const [article, home] = await Promise.all([api.articleDetail(id.value), api.home()])
     detail.value = article
     homeData.value = home
+    coverFailed.value = false
   } catch (error) {
     errorText.value = '资讯详情加载失败，请稍后重试'
   } finally {
@@ -83,7 +85,13 @@ function openArticleCta() {
     <view v-else-if="detail" class="article">
       <view class="title">{{ detail.title }}</view>
       <view class="time">更新时间：{{ formatDate(detail.publishTime) }}</view>
-      <image v-if="detail.coverUrl" class="cover" mode="aspectFill" :src="resolveFileUrl(detail.coverUrl)" />
+      <image
+        v-if="detail.coverUrl && !coverFailed"
+        class="cover"
+        mode="aspectFill"
+        :src="resolveFileUrl(detail.coverUrl)"
+        @error="coverFailed = true"
+      />
       <view class="summary">{{ detail.summary }}</view>
       <view class="content">{{ detail.contentText || detail.summary || '内容待补充。' }}</view>
     </view>

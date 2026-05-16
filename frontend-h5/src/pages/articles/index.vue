@@ -16,6 +16,7 @@ const errorText = ref('')
 const page = ref(1)
 const pageSize = 10
 const total = ref(0)
+const failedCoverUrls = ref<string[]>([])
 
 const hasMore = computed(() => articles.value.length < total.value)
 
@@ -39,6 +40,9 @@ async function loadArticles(reset = true) {
   }
   try {
     const articlePage = await api.articles(nextPage, pageSize)
+    if (reset) {
+      failedCoverUrls.value = []
+    }
     articles.value = reset ? articlePage.list : articles.value.concat(articlePage.list)
     total.value = articlePage.total
     page.value = articlePage.page
@@ -56,6 +60,16 @@ async function loadArticles(reset = true) {
 
 function goDetail(id: number) {
   uni.navigateTo({ url: `/pages/articles/detail?id=${id}` })
+}
+
+function coverFailed(url?: string) {
+  return !!url && failedCoverUrls.value.includes(url)
+}
+
+function markCoverFailed(url?: string) {
+  if (url && !failedCoverUrls.value.includes(url)) {
+    failedCoverUrls.value = failedCoverUrls.value.concat(url)
+  }
 }
 </script>
 
@@ -83,7 +97,13 @@ function goDetail(id: number) {
     />
     <view v-else class="list">
       <button v-for="item in articles" :key="item.id" class="article-card" @click="goDetail(item.id)">
-        <image v-if="item.coverUrl" class="cover" mode="aspectFill" :src="resolveFileUrl(item.coverUrl)" />
+        <image
+          v-if="item.coverUrl && !coverFailed(item.coverUrl)"
+          class="cover"
+          mode="aspectFill"
+          :src="resolveFileUrl(item.coverUrl)"
+          @error="markCoverFailed(item.coverUrl)"
+        />
         <view v-else class="cover placeholder">资讯</view>
         <view class="article-main">
           <view class="title">{{ item.title }}</view>
