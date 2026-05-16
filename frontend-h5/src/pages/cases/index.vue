@@ -7,6 +7,7 @@ import PageState from '../../components/PageState.vue'
 import WechatQrModal from '../../components/WechatQrModal.vue'
 import { api, resolveFileUrl } from '../../services/api'
 import { requireLogin } from '../../services/auth'
+import { safeNavigateTo } from '../../services/navigation'
 import type { HomeData, SuccessCaseItem } from '../../types'
 import { formatAmount } from '../../utils/format'
 
@@ -71,7 +72,7 @@ async function loadData(reset = true) {
 }
 
 function goDetail(id: number) {
-  uni.navigateTo({ url: `/pages/cases/detail?id=${id}` })
+  safeNavigateTo(`/pages/cases/detail?id=${id}`)
 }
 
 function openApply(id?: number) {

@@ -6,6 +6,7 @@ import PageState from '../../components/PageState.vue'
 import WechatQrModal from '../../components/WechatQrModal.vue'
 import { api, resolveFileUrl } from '../../services/api'
 import { requireLogin } from '../../services/auth'
+import { safeReLaunch } from '../../services/navigation'
 import type { HomeData, SuccessCaseItem } from '../../types'
 import { formatAmount } from '../../utils/format'
 
@@ -29,7 +30,7 @@ onShow(async () => {
 })
 
 function backToList() {
-  uni.reLaunch({ url: '/pages/cases/index' })
+  safeReLaunch('/pages/cases/index')
 }
 
 async function loadDetail() {

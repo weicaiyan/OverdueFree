@@ -7,6 +7,7 @@ import PageState from '../../components/PageState.vue'
 import WechatQrModal from '../../components/WechatQrModal.vue'
 import { api, resolveFileUrl } from '../../services/api'
 import { requireLogin } from '../../services/auth'
+import { safeNavigateTo } from '../../services/navigation'
 import type { HomeData } from '../../types'
 
 const homeData = ref<HomeData>({
@@ -74,7 +75,7 @@ function trackHomeEntry(entry: string) {
 
 function go(url: string, entry: string) {
   trackHomeEntry(entry)
-  uni.navigateTo({ url })
+  safeNavigateTo(url)
 }
 </script>
 
