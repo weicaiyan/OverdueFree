@@ -92,7 +92,8 @@ function openArticleCta() {
         :src="resolveFileUrl(detail.coverUrl)"
         @error="coverFailed = true"
       />
-      <view class="summary">{{ detail.summary }}</view>
+      <view v-else-if="detail.coverUrl && coverFailed" class="cover cover-placeholder">封面暂时无法加载</view>
+      <view v-if="detail.summary" class="summary">{{ detail.summary }}</view>
       <view class="content">{{ detail.contentText || detail.summary || '内容待补充。' }}</view>
     </view>
     <button v-if="detail" class="fixed-cta" @click="openArticleCta">领取债务减免延期方案</button>
@@ -133,6 +134,15 @@ function openArticleCta() {
   height: 180px;
   margin-top: 18px;
   border-radius: 12px;
+}
+
+.cover-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999999;
+  background: #f6f6f6;
+  font-size: 15px;
 }
 
 .summary {
