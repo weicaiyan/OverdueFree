@@ -60,6 +60,8 @@ const validationMessage = computed(() => {
   return ''
 })
 
+const canCalculate = computed(() => !validationMessage.value && !!result.value)
+
 const result = computed(() => {
   if (validationMessage.value) {
     return null
@@ -150,9 +152,10 @@ function clear() {
       </view>
       <view class="formula">注：按到账金额和每期还款现金流估算实际年化</view>
       <view class="actions">
-        <button class="primary" @click="calculate">计算</button>
+        <button class="primary" :class="{ disabled: !canCalculate }" :disabled="!canCalculate" @click="calculate">计算</button>
         <button class="secondary" @click="clear">清除</button>
       </view>
+      <view v-if="validationMessage" class="validation-tip">{{ validationMessage }}</view>
     </view>
 
     <view v-if="calculated && result" class="result-card">
@@ -245,6 +248,18 @@ function clear() {
   color: #333333;
   background: #eeeeee;
   border: 1px solid #cccccc;
+}
+
+.primary.disabled {
+  opacity: 0.58;
+}
+
+.validation-tip {
+  margin-top: 14px;
+  text-align: center;
+  color: #f75a50;
+  font-size: 14px;
+  line-height: 1.4;
 }
 
 .result-card,
