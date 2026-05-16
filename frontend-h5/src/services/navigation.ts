@@ -18,6 +18,13 @@ function getCurrentPageUrl() {
   return `/${currentPage.route}${query ? `?${query}` : ''}`
 }
 
+function normalizePageUrl(url: string) {
+  if (!url.startsWith('/pages/') || url.startsWith('/pages/login/index')) {
+    return ''
+  }
+  return url
+}
+
 export function goLoginWithRedirect() {
   const redirectUrl = getCurrentPageUrl()
   if (redirectUrl) {
@@ -27,7 +34,7 @@ export function goLoginWithRedirect() {
 }
 
 export function redirectAfterLogin(defaultUrl = '/pages/home/index') {
-  const redirectUrl = getLoginRedirect()
+  const redirectUrl = normalizePageUrl(getLoginRedirect())
   clearLoginRedirect()
   uni.reLaunch({ url: redirectUrl || defaultUrl })
 }
