@@ -111,7 +111,7 @@ function markCoverFailed(url?: string) {
         </view>
         <view class="arrow">›</view>
       </button>
-      <button v-if="hasMore" class="load-more" :class="{ disabled: loadingMore }" @click="loadArticles(false)">
+      <button v-if="hasMore" class="load-more" :class="{ disabled: loadingMore }" :disabled="loadingMore" @click="loadArticles(false)">
         {{ loadingMore ? '加载中...' : '加载更多资讯' }}
       </button>
       <view v-else class="list-end">已展示全部资讯</view>

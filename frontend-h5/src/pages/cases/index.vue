@@ -140,7 +140,7 @@ function markAvatarFailed(id: number) {
         <view class="info-row">处理方案：<text class="plan">{{ item.handlingPlan || '人工评估后确认' }}</text></view>
         <button class="detail-link" @click="goDetail(item.id)">查看详情</button>
       </view>
-      <button v-if="hasMore" class="load-more" :class="{ disabled: loadingMore }" @click="loadData(false)">
+      <button v-if="hasMore" class="load-more" :class="{ disabled: loadingMore }" :disabled="loadingMore" @click="loadData(false)">
         {{ loadingMore ? '加载中...' : '加载更多案例' }}
       </button>
       <view v-else class="list-end">已展示全部案例</view>
