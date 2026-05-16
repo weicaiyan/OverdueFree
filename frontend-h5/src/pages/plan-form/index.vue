@@ -7,7 +7,7 @@ import { api, getErrorMessage } from '../../services/api'
 import { requireLogin } from '../../services/auth'
 import { getStorageObject, removeStorageItem, setStorageObject } from '../../services/storage'
 import type { HomeData, LeadPayload } from '../../types'
-import { parseDebtAmount, validateLeadRequiredFields } from '../../utils/leadValidation'
+import { parseDebtAmount, validateDebtAmount, validateLeadRequiredFields, validateRegion, validateSurname } from '../../utils/leadValidation'
 
 const PLAN_FORM_DRAFT_KEY = 'overduefree_plan_form_draft'
 
@@ -69,7 +69,12 @@ const submitText = computed(() => {
 })
 
 const requiredFilledCount = computed(() => {
-  return [form.value.surname.trim(), form.value.region.trim(), form.value.debtAmount.trim(), form.value.debtType].filter(Boolean).length
+  return [
+    !validateSurname(form.value.surname),
+    !validateRegion(form.value.region),
+    !validateDebtAmount(form.value.debtAmount),
+    !!form.value.debtType
+  ].filter(Boolean).length
 })
 
 const requiredProgressText = computed(() => `必填完成 ${requiredFilledCount.value} / 4`)
