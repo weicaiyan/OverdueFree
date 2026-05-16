@@ -33,7 +33,7 @@ onShow(async () => {
     return
   }
   try {
-    const me = await api.me()
+    const me = await api.me({ authRedirect: false })
     if (me.loggedIn) {
       redirectAfterLogin()
       return

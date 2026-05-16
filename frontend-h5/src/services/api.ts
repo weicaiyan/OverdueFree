@@ -10,6 +10,10 @@ interface ApiResponse<T> {
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE'
 
+interface RequestOptions {
+  authRedirect?: boolean
+}
+
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 
 export function resolveFileUrl(fileUrl?: string) {
@@ -29,7 +33,7 @@ export function getErrorMessage(error: unknown, fallback: string) {
   return fallback
 }
 
-export function request<T>(url: string, method: HttpMethod = 'GET', data?: object): Promise<T> {
+export function request<T>(url: string, method: HttpMethod = 'GET', data?: object, options: RequestOptions = {}): Promise<T> {
   const token = getCustomerToken()
   return new Promise((resolve, reject) => {
     uni.request({
@@ -48,7 +52,9 @@ export function request<T>(url: string, method: HttpMethod = 'GET', data?: objec
         }
         if (body && body.code === 40001) {
           clearCustomerToken()
-          goLoginWithRedirect()
+          if (options.authRedirect !== false) {
+            goLoginWithRedirect()
+          }
         }
         if (body?.message) {
           reject(new Error(body.message))
@@ -81,8 +87,8 @@ export const api = {
   logout() {
     return request<void>('/api/app/auth/logout', 'POST')
   },
-  me() {
-    return request<{ loggedIn: boolean }>('/api/app/me')
+  me(options?: RequestOptions) {
+    return request<{ loggedIn: boolean }>('/api/app/me', 'GET', undefined, options)
   },
   home() {
     return request<HomeData>('/api/app/home')

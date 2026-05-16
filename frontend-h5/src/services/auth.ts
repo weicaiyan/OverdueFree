@@ -13,7 +13,7 @@ export async function requireLogin() {
     return false
   }
   try {
-    const me = await api.me()
+    const me = await api.me({ authRedirect: false })
     if (!me.loggedIn) {
       clearCustomerToken()
       goLoginWithRedirect()
