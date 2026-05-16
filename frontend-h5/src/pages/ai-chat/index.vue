@@ -199,9 +199,9 @@ function resetForm() {
           />
         </view>
       </view>
-      <input v-if="step === 0" v-model="form.surname" class="field" confirm-type="next" placeholder="例如：张先生" @confirm="next" />
-      <input v-if="step === 1" v-model="form.region" class="field" confirm-type="next" placeholder="例如：重庆" @confirm="next" />
-      <input v-if="step === 2" v-model="form.debtAmount" class="field" type="digit" confirm-type="next" placeholder="例如：50000" @confirm="next" />
+      <input v-if="step === 0" v-model="form.surname" class="field" confirm-type="next" maxlength="50" placeholder="例如：张先生" @confirm="next" />
+      <input v-if="step === 1" v-model="form.region" class="field" confirm-type="next" maxlength="100" placeholder="例如：重庆" @confirm="next" />
+      <input v-if="step === 2" v-model="form.debtAmount" class="field" type="digit" confirm-type="next" maxlength="13" placeholder="例如：50000" @confirm="next" />
       <view v-if="step === 3" class="chips">
         <button
           v-for="item in debtTypes"
@@ -213,7 +213,7 @@ function resetForm() {
           {{ item.label }}
         </button>
       </view>
-      <textarea v-if="step === 4" v-model="form.debtDescription" class="textarea" placeholder="可简单说明逾期平台和当前情况" />
+      <textarea v-if="step === 4" v-model="form.debtDescription" class="textarea" maxlength="2000" placeholder="可简单说明逾期平台和当前情况" />
       <view class="step-actions">
         <button v-if="step > 0" class="secondary-button" @click="prev">上一步</button>
         <button v-if="step < 4" class="send-button" :class="{ compact: step > 0 }" @click="next">下一步</button>

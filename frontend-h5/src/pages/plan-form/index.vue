@@ -189,11 +189,11 @@ function resetForm() {
         </view>
       </view>
       <view class="field-title">怎么称呼您 *</view>
-      <input v-model="form.surname" class="field" placeholder="例如：张先生" />
+      <input v-model="form.surname" class="field" maxlength="50" placeholder="例如：张先生" />
       <view class="field-title">所在地区 *</view>
-      <input v-model="form.region" class="field" placeholder="例如：重庆" />
+      <input v-model="form.region" class="field" maxlength="100" placeholder="例如：重庆" />
       <view class="field-title">债务金额 *</view>
-      <input v-model="form.debtAmount" class="field" type="digit" placeholder="例如：50000" />
+      <input v-model="form.debtAmount" class="field" type="digit" maxlength="13" placeholder="例如：50000" />
 
       <view class="field-title">债务类型 *</view>
       <view class="chips">
@@ -224,7 +224,7 @@ function resetForm() {
       </view>
 
       <view class="field-title">补充描述</view>
-      <textarea v-model="form.debtDescription" class="textarea" placeholder="可简单说明逾期平台、收入和当前压力" />
+      <textarea v-model="form.debtDescription" class="textarea" maxlength="2000" placeholder="可简单说明逾期平台、收入和当前压力" />
       <view v-if="submitted" class="success-card">
         信息已收到，人工顾问将结合您的情况做初步评估。您可以继续查看顾问二维码。
       </view>
