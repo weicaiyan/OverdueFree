@@ -61,13 +61,6 @@ const debtTypes = [
   { label: '其他', value: 'OTHER' }
 ]
 
-const submitText = computed(() => {
-  if (submitting.value) {
-    return '提交中...'
-  }
-  return submitted.value ? '查看顾问二维码' : '获取规划方案'
-})
-
 const requiredFilledCount = computed(() => {
   return [
     !validateSurname(form.value.surname),
@@ -82,6 +75,19 @@ const requiredProgressText = computed(() => `必填完成 ${requiredFilledCount.
 const requiredProgressStyle = computed(() => ({
   width: `${requiredFilledCount.value * 25}%`
 }))
+
+const formReady = computed(() => requiredFilledCount.value === 4)
+const submitDisabled = computed(() => submitting.value || (!submitted.value && !formReady.value))
+
+const submitText = computed(() => {
+  if (submitting.value) {
+    return '提交中...'
+  }
+  if (submitted.value) {
+    return '查看顾问二维码'
+  }
+  return formReady.value ? '获取规划方案' : '请先完善必填信息'
+})
 
 watch(
   form,
@@ -132,6 +138,10 @@ async function submit() {
     return
   }
   if (submitting.value) {
+    return
+  }
+  if (!formReady.value) {
+    uni.showToast({ title: '请先完善必填信息', icon: 'none' })
     return
   }
   const message = validateLeadRequiredFields(form.value)
@@ -230,7 +240,7 @@ function resetForm() {
       </view>
       <button v-if="submitted" class="reset-button" @click="resetForm">重新填写</button>
     </view>
-    <button class="fixed-cta" :class="{ submitted, disabled: submitting }" :disabled="submitting" @click="submit">{{ submitText }}</button>
+    <button class="fixed-cta" :class="{ submitted, disabled: submitDisabled }" :disabled="submitDisabled" @click="submit">{{ submitText }}</button>
     <WechatQrModal :visible="qrVisible" :asset="homeData.assets.wechatQr" source-page="PLAN_FORM" @close="qrVisible = false" />
   </view>
 </template>

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { safeReLaunch } from '../services/navigation'
+
 const props = defineProps<{
   active: 'cases' | 'home' | 'articles' | 'profile'
 }>()
@@ -14,7 +16,7 @@ function go(key: (typeof tabs)[number]['key'], url: string) {
   if (props.active === key) {
     return
   }
-  uni.reLaunch({ url })
+  safeReLaunch(url)
 }
 </script>
 

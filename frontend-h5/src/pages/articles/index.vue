@@ -6,6 +6,7 @@ import PageHeader from '../../components/PageHeader.vue'
 import PageState from '../../components/PageState.vue'
 import { api, resolveFileUrl } from '../../services/api'
 import { requireLogin } from '../../services/auth'
+import { safeNavigateTo } from '../../services/navigation'
 import type { ArticleItem } from '../../types'
 import { formatDate } from '../../utils/format'
 
@@ -28,6 +29,9 @@ onShow(async () => {
 })
 
 async function loadArticles(reset = true) {
+  if (reset && loading.value) {
+    return
+  }
   if (!reset && (loading.value || loadingMore.value || !hasMore.value)) {
     return
   }
@@ -59,7 +63,7 @@ async function loadArticles(reset = true) {
 }
 
 function goDetail(id: number) {
-  uni.navigateTo({ url: `/pages/articles/detail?id=${id}` })
+  safeNavigateTo(`/pages/articles/detail?id=${id}`)
 }
 
 function coverFailed(url?: string) {

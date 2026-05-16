@@ -53,6 +53,28 @@ const question = computed(() => {
 
 const progressLabel = computed(() => `第 ${step.value + 1} / 5 步`)
 
+const currentStepMessage = computed(() => {
+  if (step.value === 0) {
+    return validateSurname(form.value.surname)
+  }
+  if (step.value === 1) {
+    return validateRegion(form.value.region)
+  }
+  if (step.value === 2) {
+    return validateDebtAmount(form.value.debtAmount)
+  }
+  return ''
+})
+
+const nextDisabled = computed(() => !!currentStepMessage.value)
+const submitDisabled = computed(() => submitting.value || !!validateBeforeSubmit())
+const submitButtonText = computed(() => {
+  if (submitting.value) {
+    return '提交中...'
+  }
+  return submitDisabled.value ? '请先完善信息' : '提交'
+})
+
 watch(
   () => ({ step: step.value, form: form.value }),
   (draft) => {
@@ -91,6 +113,10 @@ function restoreDraft() {
 }
 
 function next() {
+  if (nextDisabled.value) {
+    uni.showToast({ title: currentStepMessage.value, icon: 'none' })
+    return
+  }
   if (step.value === 0) {
     const message = validateSurname(form.value.surname)
     if (message) {
@@ -216,9 +242,9 @@ function resetForm() {
       <textarea v-if="step === 4" v-model="form.debtDescription" class="textarea" maxlength="2000" placeholder="可简单说明逾期平台和当前情况" />
       <view class="step-actions">
         <button v-if="step > 0" class="secondary-button" @click="prev">上一步</button>
-        <button v-if="step < 4" class="send-button" :class="{ compact: step > 0 }" @click="next">下一步</button>
-        <button v-else class="send-button" :class="{ compact: step > 0, disabled: submitting }" :disabled="submitting" @click="submit">
-          {{ submitting ? '提交中...' : '提交' }}
+        <button v-if="step < 4" class="send-button" :class="{ compact: step > 0, disabled: nextDisabled }" :disabled="nextDisabled" @click="next">下一步</button>
+        <button v-else class="send-button" :class="{ compact: step > 0, disabled: submitDisabled }" :disabled="submitDisabled" @click="submit">
+          {{ submitButtonText }}
         </button>
       </view>
     </view>

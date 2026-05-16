@@ -1,5 +1,32 @@
 import { clearLoginRedirect, getLoginRedirect, setLoginRedirect } from './storage'
 
+const NAVIGATION_LOCK_MS = 650
+
+let navigationLocked = false
+let unlockTimer: ReturnType<typeof setTimeout> | null = null
+
+function releaseNavigation() {
+  navigationLocked = false
+  if (unlockTimer) {
+    clearTimeout(unlockTimer)
+    unlockTimer = null
+  }
+}
+
+function lockNavigation() {
+  if (navigationLocked) {
+    return false
+  }
+  navigationLocked = true
+  if (unlockTimer) {
+    clearTimeout(unlockTimer)
+  }
+  unlockTimer = setTimeout(() => {
+    releaseNavigation()
+  }, NAVIGATION_LOCK_MS)
+  return true
+}
+
 function getCurrentPageUrl() {
   const pages = getCurrentPages()
   const currentPage = pages[pages.length - 1] as
@@ -37,4 +64,50 @@ export function redirectAfterLogin(defaultUrl = '/pages/home/index') {
   const redirectUrl = normalizePageUrl(getLoginRedirect())
   clearLoginRedirect()
   uni.reLaunch({ url: redirectUrl || defaultUrl })
+}
+
+export function safeReLaunch(url: string) {
+  if (!lockNavigation()) {
+    return
+  }
+  uni.reLaunch({
+    url,
+    fail: () => {
+      releaseNavigation()
+    }
+  })
+}
+
+export function safeNavigateTo(url: string) {
+  if (!lockNavigation()) {
+    return
+  }
+  uni.navigateTo({
+    url,
+    fail: () => {
+      releaseNavigation()
+    }
+  })
+}
+
+export function safeNavigateBack(fallbackUrl = '/pages/home/index') {
+  if (!lockNavigation()) {
+    return
+  }
+  const pages = getCurrentPages()
+  if (pages.length > 1) {
+    uni.navigateBack({
+      fail: () => {
+        releaseNavigation()
+        safeReLaunch(fallbackUrl)
+      }
+    })
+    return
+  }
+  uni.reLaunch({
+    url: fallbackUrl,
+    fail: () => {
+      releaseNavigation()
+    }
+  })
 }

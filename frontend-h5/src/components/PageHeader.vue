@@ -1,16 +1,13 @@
 <script setup lang="ts">
+import { safeNavigateBack } from '../services/navigation'
+
 defineProps<{
   title: string
   back?: boolean
 }>()
 
 function goBack() {
-  const pages = getCurrentPages()
-  if (pages.length > 1) {
-    uni.navigateBack()
-    return
-  }
-  uni.reLaunch({ url: '/pages/home/index' })
+  safeNavigateBack()
 }
 </script>
 

@@ -14,7 +14,16 @@ interface RequestOptions {
   authRedirect?: boolean
 }
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+
+export const API_BASE_URL = configuredApiBaseUrl.replace(/\/+$/, '')
+
+function handleAuthExpired(options: RequestOptions) {
+  clearCustomerToken()
+  if (options.authRedirect !== false) {
+    goLoginWithRedirect()
+  }
+}
 
 export function resolveFileUrl(fileUrl?: string) {
   if (!fileUrl) {
@@ -51,10 +60,14 @@ export function request<T>(url: string, method: HttpMethod = 'GET', data?: objec
           return
         }
         if (body && body.code === 40001) {
-          clearCustomerToken()
-          if (options.authRedirect !== false) {
-            goLoginWithRedirect()
-          }
+          handleAuthExpired(options)
+          reject(new Error(body.message || '登录状态已失效，请重新登录'))
+          return
+        }
+        if (res.statusCode === 401 || res.statusCode === 403) {
+          handleAuthExpired(options)
+          reject(new Error('登录状态已失效，请重新登录'))
+          return
         }
         if (body?.message) {
           reject(new Error(body.message))

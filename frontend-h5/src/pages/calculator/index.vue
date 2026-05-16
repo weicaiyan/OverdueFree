@@ -60,8 +60,6 @@ const validationMessage = computed(() => {
   return ''
 })
 
-const canCalculate = computed(() => !validationMessage.value && !!result.value)
-
 const result = computed(() => {
   if (validationMessage.value) {
     return null
@@ -99,6 +97,8 @@ const result = computed(() => {
     actualAnnualized: actualAnnualized.toFixed(2)
   }
 })
+
+const canCalculate = computed(() => !validationMessage.value && !!result.value)
 
 onShow(async () => {
   await requireLogin()
