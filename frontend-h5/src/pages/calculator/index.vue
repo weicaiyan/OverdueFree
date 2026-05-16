@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import PageHeader from '../../components/PageHeader.vue'
 import { api } from '../../services/api'
@@ -10,6 +10,10 @@ const periods = ref('12')
 const upfrontFeePercent = ref('0')
 const monthlyFeePercent = ref('0.70')
 const calculated = ref(false)
+
+watch([principal, periods, upfrontFeePercent, monthlyFeePercent], () => {
+  calculated.value = false
+})
 
 function estimateMonthlyIrr(netReceived: number, monthlyPayment: number, months: number) {
   if (monthlyPayment <= 0 || netReceived <= 0 || months <= 0) {
