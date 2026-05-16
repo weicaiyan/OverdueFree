@@ -10,7 +10,10 @@ const tabs = [
   { key: 'profile', label: '个人中心', icon: '⚙', url: '/pages/profile/index' }
 ] as const
 
-function go(url: string) {
+function go(key: (typeof tabs)[number]['key'], url: string) {
+  if (props.active === key) {
+    return
+  }
   uni.reLaunch({ url })
 }
 </script>
@@ -22,7 +25,7 @@ function go(url: string) {
       :key="tab.key"
       class="tab-item"
       :class="{ active: props.active === tab.key }"
-      @click="go(tab.url)"
+      @click="go(tab.key, tab.url)"
     >
       <view class="tab-icon">{{ tab.icon }}</view>
       <view class="tab-label">{{ tab.label }}</view>
@@ -51,7 +54,15 @@ function go(url: string) {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
   color: #9a9a9a;
+  background: transparent;
+}
+
+.tab-item::after {
+  border: 0;
 }
 
 .tab-icon {

@@ -5,7 +5,7 @@ import BottomTabs from '../../components/BottomTabs.vue'
 import PageHeader from '../../components/PageHeader.vue'
 import PageState from '../../components/PageState.vue'
 import WechatQrModal from '../../components/WechatQrModal.vue'
-import { api } from '../../services/api'
+import { api, resolveFileUrl } from '../../services/api'
 import { requireLogin } from '../../services/auth'
 import type { HomeData, SuccessCaseItem } from '../../types'
 import { formatAmount } from '../../utils/format'
@@ -19,6 +19,7 @@ const errorText = ref('')
 const page = ref(1)
 const pageSize = 10
 const total = ref(0)
+const failedAvatarIds = ref<number[]>([])
 
 const hasMore = computed(() => cases.value.length < total.value)
 
@@ -47,6 +48,7 @@ async function loadData(reset = true) {
       homeData.value = home
       total.value = casePage.total
       page.value = casePage.page
+      failedAvatarIds.value = []
     } else {
       const casePage = await api.cases(nextPage, pageSize)
       cases.value = cases.value.concat(casePage.list)
@@ -79,6 +81,16 @@ function openApply(id?: number) {
   }).catch(() => undefined)
   qrVisible.value = true
 }
+
+function avatarFailed(id: number) {
+  return failedAvatarIds.value.includes(id)
+}
+
+function markAvatarFailed(id: number) {
+  if (!failedAvatarIds.value.includes(id)) {
+    failedAvatarIds.value = failedAvatarIds.value.concat(id)
+  }
+}
 </script>
 
 <template>
@@ -106,7 +118,16 @@ function openApply(id?: number) {
     <view v-else class="list">
       <view v-for="item in cases" :key="item.id" class="case-card">
         <view class="card-head">
-          <view class="avatar">人</view>
+          <view class="avatar">
+            <image
+              v-if="item.avatarUrl && !avatarFailed(item.id)"
+              class="avatar-image"
+              mode="aspectFill"
+              :src="resolveFileUrl(item.avatarUrl)"
+              @error="markAvatarFailed(item.id)"
+            />
+            <text v-else>人</text>
+          </view>
           <view class="person">
             <view class="name">{{ item.displayName }}</view>
             <view class="phone">{{ item.maskedPhone || '号码已脱敏' }}</view>
@@ -119,7 +140,7 @@ function openApply(id?: number) {
         <view class="info-row">处理方案：<text class="plan">{{ item.handlingPlan || '人工评估后确认' }}</text></view>
         <button class="detail-link" @click="goDetail(item.id)">查看详情</button>
       </view>
-      <button v-if="hasMore" class="load-more" :class="{ disabled: loadingMore }" @click="loadData(false)">
+      <button v-if="hasMore" class="load-more" :class="{ disabled: loadingMore }" :disabled="loadingMore" @click="loadData(false)">
         {{ loadingMore ? '加载中...' : '加载更多案例' }}
       </button>
       <view v-else class="list-end">已展示全部案例</view>
@@ -165,12 +186,18 @@ function openApply(id?: number) {
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
   width: 54px;
   height: 54px;
   border-radius: 50%;
   color: #988aa9;
   background: #eadbff;
   font-size: 18px;
+}
+
+.avatar-image {
+  width: 100%;
+  height: 100%;
 }
 
 .person {

@@ -51,6 +51,8 @@ const question = computed(() => {
   return ['怎么称呼您？', '您所在地区是哪里？', '大概逾期金额是多少？', '主要债务类型？', '还有什么想补充？'][step.value]
 })
 
+const progressLabel = computed(() => `第 ${step.value + 1} / 5 步`)
+
 watch(
   () => ({ step: step.value, form: form.value }),
   (draft) => {
@@ -181,14 +183,25 @@ function resetForm() {
       <view v-if="step > 2" class="bubble user">{{ form.debtAmount }}元</view>
       <view v-if="step > 3" class="bubble user">{{ debtTypes.find((item) => item.value === form.debtType)?.label }}</view>
       <view v-if="submitted && form.debtDescription" class="bubble user">{{ form.debtDescription }}</view>
-      <view class="bubble bot">{{ question }}</view>
+      <view v-if="!submitted" class="bubble bot">{{ question }}</view>
       <view v-if="submitted" class="bubble bot success-bubble">信息已收到，人工顾问会结合您的情况做初步评估。</view>
     </view>
 
     <view v-if="!submitted" class="input-panel">
-      <input v-if="step === 0" v-model="form.surname" class="field" placeholder="例如：张先生" />
-      <input v-if="step === 1" v-model="form.region" class="field" placeholder="例如：重庆" />
-      <input v-if="step === 2" v-model="form.debtAmount" class="field" type="digit" placeholder="例如：50000" />
+      <view class="progress-row">
+        <view class="progress-label">{{ progressLabel }}</view>
+        <view class="progress-dots">
+          <view
+            v-for="item in 5"
+            :key="item"
+            class="progress-dot"
+            :class="{ active: item - 1 === step, done: item - 1 < step }"
+          />
+        </view>
+      </view>
+      <input v-if="step === 0" v-model="form.surname" class="field" confirm-type="next" maxlength="50" placeholder="例如：张先生" @confirm="next" />
+      <input v-if="step === 1" v-model="form.region" class="field" confirm-type="next" maxlength="100" placeholder="例如：重庆" @confirm="next" />
+      <input v-if="step === 2" v-model="form.debtAmount" class="field" type="digit" confirm-type="next" maxlength="13" placeholder="例如：50000" @confirm="next" />
       <view v-if="step === 3" class="chips">
         <button
           v-for="item in debtTypes"
@@ -200,11 +213,11 @@ function resetForm() {
           {{ item.label }}
         </button>
       </view>
-      <textarea v-if="step === 4" v-model="form.debtDescription" class="textarea" placeholder="可简单说明逾期平台和当前情况" />
+      <textarea v-if="step === 4" v-model="form.debtDescription" class="textarea" maxlength="2000" placeholder="可简单说明逾期平台和当前情况" />
       <view class="step-actions">
         <button v-if="step > 0" class="secondary-button" @click="prev">上一步</button>
         <button v-if="step < 4" class="send-button" :class="{ compact: step > 0 }" @click="next">下一步</button>
-        <button v-else class="send-button" :class="{ compact: step > 0, disabled: submitting }" @click="submit">
+        <button v-else class="send-button" :class="{ compact: step > 0, disabled: submitting }" :disabled="submitting" @click="submit">
           {{ submitting ? '提交中...' : '提交' }}
         </button>
       </view>
@@ -264,6 +277,41 @@ function resetForm() {
   box-sizing: border-box;
   background: #fff8ff;
   border-top: 1px solid #e8e0e8;
+}
+
+.progress-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.progress-label {
+  color: #777777;
+  font-size: 13px;
+}
+
+.progress-dots {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.progress-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #e4dbe4;
+}
+
+.progress-dot.done,
+.progress-dot.active {
+  background: #f75a50;
+}
+
+.progress-dot.active {
+  width: 18px;
+  border-radius: 999px;
 }
 
 .success-panel {

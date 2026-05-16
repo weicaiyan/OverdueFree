@@ -1,4 +1,5 @@
 const CUSTOMER_TOKEN_KEY = 'overduefree_customer_token'
+const LOGIN_REDIRECT_KEY = 'overduefree_login_redirect'
 
 export function getCustomerToken() {
   return uni.getStorageSync(CUSTOMER_TOKEN_KEY) as string
@@ -10,6 +11,18 @@ export function setCustomerToken(token: string) {
 
 export function clearCustomerToken() {
   uni.removeStorageSync(CUSTOMER_TOKEN_KEY)
+}
+
+export function getLoginRedirect() {
+  return uni.getStorageSync(LOGIN_REDIRECT_KEY) as string
+}
+
+export function setLoginRedirect(url: string) {
+  uni.setStorageSync(LOGIN_REDIRECT_KEY, url)
+}
+
+export function clearLoginRedirect() {
+  uni.removeStorageSync(LOGIN_REDIRECT_KEY)
 }
 
 export function getStorageObject<T>(key: string, fallback: T): T {

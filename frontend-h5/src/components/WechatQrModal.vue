@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { AssetResource } from '../types'
 import { api, resolveFileUrl } from '../services/api'
 
@@ -13,12 +13,21 @@ const emit = defineEmits<{
   (event: 'close'): void
 }>()
 
+const imageFailed = ref(false)
+const placeholderText = computed(() => {
+  if (props.asset?.fileUrl && imageFailed.value) {
+    return '二维码暂时无法加载'
+  }
+  return '顾问二维码待配置'
+})
+
 watch(
   () => props.visible,
   (visible) => {
     if (!visible) {
       return
     }
+    imageFailed.value = false
     api.event({
       eventType: 'VIEW_WECHAT_QR',
       sourcePage: props.sourcePage,
@@ -35,8 +44,14 @@ watch(
     <view class="modal-panel" @click.stop>
       <view class="modal-title">扫码添加顾问</view>
       <view class="modal-subtitle">获取免费初评回访</view>
-      <image v-if="asset?.fileUrl" class="qr-image" mode="aspectFit" :src="resolveFileUrl(asset.fileUrl)" />
-      <view v-else class="qr-placeholder">顾问二维码待配置</view>
+      <image
+        v-if="asset?.fileUrl && !imageFailed"
+        class="qr-image"
+        mode="aspectFit"
+        :src="resolveFileUrl(asset.fileUrl)"
+        @error="imageFailed = true"
+      />
+      <view v-else class="qr-placeholder">{{ placeholderText }}</view>
       <button class="modal-button" @click="emit('close')">知道了</button>
     </view>
   </view>

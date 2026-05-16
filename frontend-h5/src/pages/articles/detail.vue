@@ -15,6 +15,7 @@ const homeData = ref<HomeData>({ assets: {}, serviceSteps: [] })
 const qrVisible = ref(false)
 const loading = ref(false)
 const errorText = ref('')
+const coverFailed = ref(false)
 
 onLoad((query) => {
   id.value = Number(query?.id || 0)
@@ -32,12 +33,16 @@ function backToList() {
 }
 
 async function loadDetail() {
+  if (loading.value) {
+    return
+  }
   loading.value = true
   errorText.value = ''
   try {
     const [article, home] = await Promise.all([api.articleDetail(id.value), api.home()])
     detail.value = article
     homeData.value = home
+    coverFailed.value = false
   } catch (error) {
     errorText.value = '资讯详情加载失败，请稍后重试'
   } finally {
@@ -83,8 +88,15 @@ function openArticleCta() {
     <view v-else-if="detail" class="article">
       <view class="title">{{ detail.title }}</view>
       <view class="time">更新时间：{{ formatDate(detail.publishTime) }}</view>
-      <image v-if="detail.coverUrl" class="cover" mode="aspectFill" :src="resolveFileUrl(detail.coverUrl)" />
-      <view class="summary">{{ detail.summary }}</view>
+      <image
+        v-if="detail.coverUrl && !coverFailed"
+        class="cover"
+        mode="aspectFill"
+        :src="resolveFileUrl(detail.coverUrl)"
+        @error="coverFailed = true"
+      />
+      <view v-else-if="detail.coverUrl && coverFailed" class="cover cover-placeholder">封面暂时无法加载</view>
+      <view v-if="detail.summary" class="summary">{{ detail.summary }}</view>
       <view class="content">{{ detail.contentText || detail.summary || '内容待补充。' }}</view>
     </view>
     <button v-if="detail" class="fixed-cta" @click="openArticleCta">领取债务减免延期方案</button>
@@ -125,6 +137,15 @@ function openArticleCta() {
   height: 180px;
   margin-top: 18px;
   border-radius: 12px;
+}
+
+.cover-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999999;
+  background: #f6f6f6;
+  font-size: 15px;
 }
 
 .summary {

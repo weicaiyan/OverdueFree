@@ -1,22 +1,33 @@
 <script setup lang="ts">
+import { ref, watch } from 'vue'
 import type { AssetResource } from '../types'
 import { resolveFileUrl } from '../services/api'
 
-defineProps<{
+const props = defineProps<{
   asset?: AssetResource | null
   title: string
   subtitle?: string
   tone?: 'red' | 'blue' | 'teal'
 }>()
+
+const imageFailed = ref(false)
+
+watch(
+  () => props.asset?.fileUrl,
+  () => {
+    imageFailed.value = false
+  }
+)
 </script>
 
 <template>
   <view class="asset-box" :class="tone || 'blue'">
     <image
-      v-if="asset?.fileUrl"
+      v-if="asset?.fileUrl && !imageFailed"
       class="asset-image"
       mode="aspectFill"
       :src="resolveFileUrl(asset.fileUrl)"
+      @error="imageFailed = true"
     />
     <view v-else class="asset-placeholder">
       <view class="placeholder-title">{{ title }}</view>

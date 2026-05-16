@@ -1,15 +1,31 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, onUnmounted, ref, watch } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { api, getErrorMessage } from '../../services/api'
 import { isPhone, saveLoginToken } from '../../services/auth'
+import { redirectAfterLogin } from '../../services/navigation'
 import { clearCustomerToken, getCustomerToken } from '../../services/storage'
 
 const phone = ref('')
 const code = ref('')
 const mockCode = ref('')
+const codePhone = ref('')
 const loading = ref(false)
 const codeLoading = ref(false)
+const countdown = ref(0)
+let countdownTimer: ReturnType<typeof setInterval> | null = null
+
+const codeButtonText = computed(() => {
+  if (codeLoading.value) {
+    return '生成中'
+  }
+  if (countdown.value > 0) {
+    return `${countdown.value}s`
+  }
+  return '获取验证码'
+})
+
+const codeButtonDisabled = computed(() => codeLoading.value || countdown.value > 0)
 
 onShow(async () => {
   const token = getCustomerToken()
@@ -17,9 +33,9 @@ onShow(async () => {
     return
   }
   try {
-    const me = await api.me()
+    const me = await api.me({ authRedirect: false })
     if (me.loggedIn) {
-      uni.reLaunch({ url: '/pages/home/index' })
+      redirectAfterLogin()
       return
     }
     clearCustomerToken()
@@ -28,8 +44,41 @@ onShow(async () => {
   }
 })
 
+onUnmounted(() => {
+  clearCountdown()
+})
+
+watch(phone, (value) => {
+  if (!codePhone.value || value.trim() === codePhone.value) {
+    return
+  }
+  code.value = ''
+  mockCode.value = ''
+  codePhone.value = ''
+  clearCountdown()
+})
+
+function clearCountdown() {
+  countdown.value = 0
+  if (countdownTimer) {
+    clearInterval(countdownTimer)
+    countdownTimer = null
+  }
+}
+
+function startCountdown() {
+  clearCountdown()
+  countdown.value = 60
+  countdownTimer = setInterval(() => {
+    countdown.value -= 1
+    if (countdown.value <= 0) {
+      clearCountdown()
+    }
+  }, 1000)
+}
+
 async function sendCode() {
-  if (codeLoading.value) {
+  if (codeButtonDisabled.value) {
     return
   }
   const normalizedPhone = phone.value.trim()
@@ -41,8 +90,10 @@ async function sendCode() {
   try {
     const result = await api.sendCode(normalizedPhone)
     phone.value = normalizedPhone
+    codePhone.value = normalizedPhone
     mockCode.value = result.mockCode
     code.value = result.mockCode
+    startCountdown()
     uni.showToast({ title: '验证码已生成', icon: 'none' })
   } catch (error) {
     uni.showToast({ title: getErrorMessage(error, '验证码获取失败'), icon: 'none' })
@@ -65,17 +116,22 @@ async function login() {
     uni.showToast({ title: '请输入6位验证码', icon: 'none' })
     return
   }
+  if (codePhone.value && normalizedPhone !== codePhone.value) {
+    uni.showToast({ title: '手机号已变化，请重新获取验证码', icon: 'none' })
+    return
+  }
   loading.value = true
   try {
     const result = await api.login(normalizedPhone, normalizedCode)
     saveLoginToken(result.token)
-    uni.reLaunch({ url: '/pages/home/index' })
+    redirectAfterLogin()
   } catch (error) {
     uni.showToast({ title: getErrorMessage(error, '登录失败'), icon: 'none' })
   } finally {
     loading.value = false
   }
 }
+
 </script>
 
 <template>
@@ -88,8 +144,8 @@ async function login() {
       <view class="field-label">验证码</view>
       <view class="code-row">
         <input v-model="code" class="field code-field" type="number" maxlength="6" placeholder="请输入验证码" @confirm="login" />
-        <button class="code-button" :class="{ disabled: codeLoading }" :disabled="codeLoading" @click="sendCode">
-          {{ codeLoading ? '生成中' : '获取验证码' }}
+        <button class="code-button" :class="{ disabled: codeButtonDisabled }" :disabled="codeButtonDisabled" @click="sendCode">
+          {{ codeButtonText }}
         </button>
       </view>
       <view v-if="mockCode" class="mock-code">本次验证码：{{ mockCode }}</view>

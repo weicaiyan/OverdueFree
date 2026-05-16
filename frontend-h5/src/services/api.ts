@@ -1,4 +1,5 @@
 import type { ArticleItem, HomeData, LeadPayload, PageResult, SuccessCaseItem } from '../types'
+import { goLoginWithRedirect } from './navigation'
 import { clearCustomerToken, getCustomerToken } from './storage'
 
 interface ApiResponse<T> {
@@ -8,6 +9,10 @@ interface ApiResponse<T> {
 }
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE'
+
+interface RequestOptions {
+  authRedirect?: boolean
+}
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 
@@ -28,7 +33,7 @@ export function getErrorMessage(error: unknown, fallback: string) {
   return fallback
 }
 
-export function request<T>(url: string, method: HttpMethod = 'GET', data?: object): Promise<T> {
+export function request<T>(url: string, method: HttpMethod = 'GET', data?: object, options: RequestOptions = {}): Promise<T> {
   const token = getCustomerToken()
   return new Promise((resolve, reject) => {
     uni.request({
@@ -47,7 +52,9 @@ export function request<T>(url: string, method: HttpMethod = 'GET', data?: objec
         }
         if (body && body.code === 40001) {
           clearCustomerToken()
-          uni.reLaunch({ url: '/pages/login/index' })
+          if (options.authRedirect !== false) {
+            goLoginWithRedirect()
+          }
         }
         if (body?.message) {
           reject(new Error(body.message))
@@ -78,10 +85,10 @@ export const api = {
     return request<{ token: string; expiresAt: string }>('/api/app/auth/login', 'POST', { phone, code })
   },
   logout() {
-    return request<void>('/api/app/auth/logout', 'POST')
+    return request<void>('/api/app/auth/logout', 'POST', undefined, { authRedirect: false })
   },
-  me() {
-    return request<{ loggedIn: boolean }>('/api/app/me')
+  me(options?: RequestOptions) {
+    return request<{ loggedIn: boolean }>('/api/app/me', 'GET', undefined, options)
   },
   home() {
     return request<HomeData>('/api/app/home')

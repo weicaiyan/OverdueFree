@@ -7,7 +7,7 @@ import { api, getErrorMessage } from '../../services/api'
 import { requireLogin } from '../../services/auth'
 import { getStorageObject, removeStorageItem, setStorageObject } from '../../services/storage'
 import type { HomeData, LeadPayload } from '../../types'
-import { parseDebtAmount, validateLeadRequiredFields } from '../../utils/leadValidation'
+import { parseDebtAmount, validateDebtAmount, validateLeadRequiredFields, validateRegion, validateSurname } from '../../utils/leadValidation'
 
 const PLAN_FORM_DRAFT_KEY = 'overduefree_plan_form_draft'
 
@@ -67,6 +67,21 @@ const submitText = computed(() => {
   }
   return submitted.value ? '查看顾问二维码' : '获取规划方案'
 })
+
+const requiredFilledCount = computed(() => {
+  return [
+    !validateSurname(form.value.surname),
+    !validateRegion(form.value.region),
+    !validateDebtAmount(form.value.debtAmount),
+    !!form.value.debtType
+  ].filter(Boolean).length
+})
+
+const requiredProgressText = computed(() => `必填完成 ${requiredFilledCount.value} / 4`)
+
+const requiredProgressStyle = computed(() => ({
+  width: `${requiredFilledCount.value * 25}%`
+}))
 
 watch(
   form,
@@ -164,12 +179,21 @@ function resetForm() {
     <PageHeader title="帮您规划和优化债务" back />
     <view class="panel">
       <view class="notice">* 以下基本信息请如实填写，填写越详细评估越准确</view>
+      <view class="required-progress">
+        <view class="required-progress-head">
+          <text>基础信息</text>
+          <text>{{ requiredProgressText }}</text>
+        </view>
+        <view class="required-progress-track">
+          <view class="required-progress-bar" :style="requiredProgressStyle" />
+        </view>
+      </view>
       <view class="field-title">怎么称呼您 *</view>
-      <input v-model="form.surname" class="field" placeholder="例如：张先生" />
+      <input v-model="form.surname" class="field" maxlength="50" placeholder="例如：张先生" />
       <view class="field-title">所在地区 *</view>
-      <input v-model="form.region" class="field" placeholder="例如：重庆" />
+      <input v-model="form.region" class="field" maxlength="100" placeholder="例如：重庆" />
       <view class="field-title">债务金额 *</view>
-      <input v-model="form.debtAmount" class="field" type="digit" placeholder="例如：50000" />
+      <input v-model="form.debtAmount" class="field" type="digit" maxlength="13" placeholder="例如：50000" />
 
       <view class="field-title">债务类型 *</view>
       <view class="chips">
@@ -200,13 +224,13 @@ function resetForm() {
       </view>
 
       <view class="field-title">补充描述</view>
-      <textarea v-model="form.debtDescription" class="textarea" placeholder="可简单说明逾期平台、收入和当前压力" />
+      <textarea v-model="form.debtDescription" class="textarea" maxlength="2000" placeholder="可简单说明逾期平台、收入和当前压力" />
       <view v-if="submitted" class="success-card">
         信息已收到，人工顾问将结合您的情况做初步评估。您可以继续查看顾问二维码。
       </view>
       <button v-if="submitted" class="reset-button" @click="resetForm">重新填写</button>
     </view>
-    <button class="fixed-cta" :class="{ submitted }" @click="submit">{{ submitText }}</button>
+    <button class="fixed-cta" :class="{ submitted, disabled: submitting }" :disabled="submitting" @click="submit">{{ submitText }}</button>
     <WechatQrModal :visible="qrVisible" :asset="homeData.assets.wechatQr" source-page="PLAN_FORM" @close="qrVisible = false" />
   </view>
 </template>
@@ -231,6 +255,35 @@ function resetForm() {
   color: #ff5a42;
   font-size: 14px;
   line-height: 1.5;
+}
+
+.required-progress {
+  padding: 14px;
+  border-radius: 12px;
+  background: #fff7f6;
+}
+
+.required-progress-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #777777;
+  font-size: 13px;
+}
+
+.required-progress-track {
+  overflow: hidden;
+  height: 7px;
+  margin-top: 10px;
+  border-radius: 999px;
+  background: #f1dfdc;
+}
+
+.required-progress-bar {
+  height: 100%;
+  border-radius: 999px;
+  background: #f75a50;
+  transition: width 0.2s ease;
 }
 
 .field-title {
@@ -299,6 +352,10 @@ function resetForm() {
 
 .fixed-cta.submitted {
   background: #45b854;
+}
+
+.fixed-cta.disabled {
+  opacity: 0.72;
 }
 
 .success-card {
