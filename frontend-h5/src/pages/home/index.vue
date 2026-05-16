@@ -39,6 +39,9 @@ onShow(async () => {
 })
 
 async function loadHome() {
+  if (loading.value) {
+    return
+  }
   loading.value = true
   errorText.value = ''
   try {

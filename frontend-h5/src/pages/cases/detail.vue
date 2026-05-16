@@ -33,6 +33,9 @@ function backToList() {
 }
 
 async function loadDetail() {
+  if (loading.value) {
+    return
+  }
   loading.value = true
   errorText.value = ''
   try {
