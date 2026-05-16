@@ -40,10 +40,14 @@ async function loadDetail() {
   loading.value = true
   errorText.value = ''
   try {
-    const [article, home] = await Promise.all([api.articleDetail(id.value), api.home()])
+    const article = await api.articleDetail(id.value)
     detail.value = article
-    homeData.value = home
     coverFailed.value = false
+    api.home()
+      .then((home) => {
+        homeData.value = home
+      })
+      .catch(() => undefined)
   } catch (error) {
     errorText.value = '资讯详情加载失败，请稍后重试'
   } finally {

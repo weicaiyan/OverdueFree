@@ -47,12 +47,16 @@ async function loadData(reset = true) {
   }
   try {
     if (reset) {
-      const [casePage, home] = await Promise.all([api.cases(nextPage, pageSize), api.home()])
+      const casePage = await api.cases(nextPage, pageSize)
       cases.value = casePage.list
-      homeData.value = home
       total.value = casePage.total
       page.value = casePage.page
       failedAvatarIds.value = []
+      api.home()
+        .then((home) => {
+          homeData.value = home
+        })
+        .catch(() => undefined)
     } else {
       const casePage = await api.cases(nextPage, pageSize)
       cases.value = cases.value.concat(casePage.list)

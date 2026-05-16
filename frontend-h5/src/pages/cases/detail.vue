@@ -40,10 +40,14 @@ async function loadDetail() {
   loading.value = true
   errorText.value = ''
   try {
-    const [caseDetail, home] = await Promise.all([api.caseDetail(id.value), api.home()])
+    const caseDetail = await api.caseDetail(id.value)
     detail.value = caseDetail
-    homeData.value = home
     avatarFailed.value = false
+    api.home()
+      .then((home) => {
+        homeData.value = home
+      })
+      .catch(() => undefined)
   } catch (error) {
     errorText.value = '案例详情加载失败，请稍后重试'
   } finally {
