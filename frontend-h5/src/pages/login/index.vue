@@ -3,7 +3,7 @@ import { computed, onUnmounted, ref, watch } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { api, getErrorMessage } from '../../services/api'
 import { isPhone, saveLoginToken } from '../../services/auth'
-import { clearCustomerToken, getCustomerToken } from '../../services/storage'
+import { clearCustomerToken, clearLoginRedirect, getCustomerToken, getLoginRedirect } from '../../services/storage'
 
 const phone = ref('')
 const code = ref('')
@@ -34,7 +34,7 @@ onShow(async () => {
   try {
     const me = await api.me()
     if (me.loggedIn) {
-      uni.reLaunch({ url: '/pages/home/index' })
+      redirectAfterLogin()
       return
     }
     clearCustomerToken()
@@ -123,12 +123,18 @@ async function login() {
   try {
     const result = await api.login(normalizedPhone, normalizedCode)
     saveLoginToken(result.token)
-    uni.reLaunch({ url: '/pages/home/index' })
+    redirectAfterLogin()
   } catch (error) {
     uni.showToast({ title: getErrorMessage(error, '登录失败'), icon: 'none' })
   } finally {
     loading.value = false
   }
+}
+
+function redirectAfterLogin() {
+  const redirectUrl = getLoginRedirect()
+  clearLoginRedirect()
+  uni.reLaunch({ url: redirectUrl || '/pages/home/index' })
 }
 </script>
 
