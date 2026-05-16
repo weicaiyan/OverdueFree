@@ -68,6 +68,16 @@ const submitText = computed(() => {
   return submitted.value ? '查看顾问二维码' : '获取规划方案'
 })
 
+const requiredFilledCount = computed(() => {
+  return [form.value.surname.trim(), form.value.region.trim(), form.value.debtAmount.trim(), form.value.debtType].filter(Boolean).length
+})
+
+const requiredProgressText = computed(() => `必填完成 ${requiredFilledCount.value} / 4`)
+
+const requiredProgressStyle = computed(() => ({
+  width: `${requiredFilledCount.value * 25}%`
+}))
+
 watch(
   form,
   (draft) => {
@@ -164,6 +174,15 @@ function resetForm() {
     <PageHeader title="帮您规划和优化债务" back />
     <view class="panel">
       <view class="notice">* 以下基本信息请如实填写，填写越详细评估越准确</view>
+      <view class="required-progress">
+        <view class="required-progress-head">
+          <text>基础信息</text>
+          <text>{{ requiredProgressText }}</text>
+        </view>
+        <view class="required-progress-track">
+          <view class="required-progress-bar" :style="requiredProgressStyle" />
+        </view>
+      </view>
       <view class="field-title">怎么称呼您 *</view>
       <input v-model="form.surname" class="field" placeholder="例如：张先生" />
       <view class="field-title">所在地区 *</view>
@@ -206,7 +225,7 @@ function resetForm() {
       </view>
       <button v-if="submitted" class="reset-button" @click="resetForm">重新填写</button>
     </view>
-    <button class="fixed-cta" :class="{ submitted }" @click="submit">{{ submitText }}</button>
+    <button class="fixed-cta" :class="{ submitted, disabled: submitting }" :disabled="submitting" @click="submit">{{ submitText }}</button>
     <WechatQrModal :visible="qrVisible" :asset="homeData.assets.wechatQr" source-page="PLAN_FORM" @close="qrVisible = false" />
   </view>
 </template>
@@ -231,6 +250,35 @@ function resetForm() {
   color: #ff5a42;
   font-size: 14px;
   line-height: 1.5;
+}
+
+.required-progress {
+  padding: 14px;
+  border-radius: 12px;
+  background: #fff7f6;
+}
+
+.required-progress-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #777777;
+  font-size: 13px;
+}
+
+.required-progress-track {
+  overflow: hidden;
+  height: 7px;
+  margin-top: 10px;
+  border-radius: 999px;
+  background: #f1dfdc;
+}
+
+.required-progress-bar {
+  height: 100%;
+  border-radius: 999px;
+  background: #f75a50;
+  transition: width 0.2s ease;
 }
 
 .field-title {
@@ -299,6 +347,10 @@ function resetForm() {
 
 .fixed-cta.submitted {
   background: #45b854;
+}
+
+.fixed-cta.disabled {
+  opacity: 0.72;
 }
 
 .success-card {
