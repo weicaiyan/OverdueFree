@@ -241,7 +241,7 @@ function go(url: string, entry: string) {
   margin-top: 2px;
   text-align: center;
   font-size: 13px;
-  letter-spacing: 2px;
+  letter-spacing: 0;
   color: #777777;
 }
 
