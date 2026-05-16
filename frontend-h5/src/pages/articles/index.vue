@@ -28,6 +28,9 @@ onShow(async () => {
 })
 
 async function loadArticles(reset = true) {
+  if (reset && loading.value) {
+    return
+  }
   if (!reset && (loading.value || loadingMore.value || !hasMore.value)) {
     return
   }
