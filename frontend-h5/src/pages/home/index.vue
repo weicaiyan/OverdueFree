@@ -15,6 +15,7 @@ const homeData = ref<HomeData>({
 })
 const qrVisible = ref(false)
 const videoVisible = ref(false)
+const videoError = ref(false)
 const loading = ref(false)
 const loaded = ref(false)
 const errorText = ref('')
@@ -56,6 +57,7 @@ function openVideo() {
     uni.showToast({ title: '视频待配置', icon: 'none' })
     return
   }
+  videoError.value = false
   videoVisible.value = true
 }
 
@@ -144,11 +146,14 @@ function go(url: string, entry: string) {
     <view v-if="videoVisible" class="video-mask" @click="videoVisible = false">
       <view class="video-panel" @click.stop>
         <video
+          v-if="!videoError"
           class="video-player"
           controls
           autoplay
           :src="resolveFileUrl(homeData.assets.homeVideo?.fileUrl)"
+          @error="videoError = true"
         />
+        <view v-else class="video-error">视频暂时无法播放，请稍后再试</view>
         <button class="close-video" @click="videoVisible = false">关闭</button>
       </view>
     </view>
@@ -330,6 +335,18 @@ function go(url: string, entry: string) {
   border-radius: 12px;
   overflow: hidden;
   background: #000000;
+}
+
+.video-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 220px;
+  border-radius: 12px;
+  color: #ffffff;
+  background: #202932;
+  font-size: 15px;
 }
 
 .close-video {
