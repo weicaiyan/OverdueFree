@@ -16,6 +16,12 @@ public class LeadListItem {
     private String region;
     private BigDecimal debtAmount;
     private String debtType;
+    private String debtDescription;
+    private String ageRange;
+    private String jobStatus;
+    private String creditStatus;
+    private String monthlyIncomeRange;
+    private String monthlyExpenseRange;
     private String source;
     private LocalDateTime firstLoginAt;
     private LocalDateTime leadCreatedAt;
