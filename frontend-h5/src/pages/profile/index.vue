@@ -51,6 +51,15 @@ function openInfo(type: InfoType) {
   infoVisible.value = true
 }
 
+function openProfileQr(entry: string) {
+  api.event({
+    eventType: 'PROFILE_CTA',
+    sourcePage: 'PROFILE',
+    metadata: { entry }
+  }).catch(() => undefined)
+  qrVisible.value = true
+}
+
 function confirmLogout() {
   uni.showModal({
     title: '退出登录',
@@ -86,14 +95,14 @@ function confirmLogout() {
         <view class="menu-icon">→</view>
         <view class="menu-text">退出登录</view>
       </button>
-      <button class="menu-item" @click="qrVisible = true">
+      <button class="menu-item" @click="openProfileQr('CONTACT_MENU')">
         <view class="menu-icon">✉</view>
         <view class="menu-text">联系我们</view>
         <view class="menu-extra">扫码咨询</view>
       </button>
     </view>
     <view class="record">演示版暂未配置备案信息</view>
-    <button class="fixed-cta" @click="qrVisible = true">领取债务减免延期方案</button>
+    <button class="fixed-cta" @click="openProfileQr('FIXED_CTA')">领取债务减免延期方案</button>
     <view v-if="infoVisible" class="info-mask" @click="infoVisible = false">
       <view class="info-panel" @click.stop>
         <view class="info-title">{{ infoTitle }}</view>
