@@ -52,6 +52,8 @@ Windows 本地演示可以直接双击以下脚本：
 
 `start-mysql.bat` 会等待 MySQL 真正可连接后再返回，避免第一次启动 Docker MySQL 时后端过早启动导致连接失败。
 
+`backend/start-backend.bat` 会等待后端 `/api/health` 返回正常后再返回；如果 `8080` 已被占用，会先检查现有进程是否真的是可用的后端服务，不会自动关闭或重启已有进程。
+
 ### 1. 启动 MySQL
 
 ```bash
