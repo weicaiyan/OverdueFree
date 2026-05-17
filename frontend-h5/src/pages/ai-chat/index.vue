@@ -76,6 +76,7 @@ const submitButtonText = computed(() => {
   }
   return submitDisabled.value ? '请先完善信息' : '提交'
 })
+const descriptionLength = computed(() => form.value.debtDescription.length)
 
 watch(
   () => ({ step: step.value, form: form.value }),
@@ -246,7 +247,10 @@ function resetForm() {
           {{ item.label }}
         </button>
       </view>
-      <textarea v-if="step === 4" v-model="form.debtDescription" class="textarea" maxlength="2000" placeholder="可简单说明逾期平台和当前情况" />
+      <template v-if="step === 4">
+        <textarea v-model="form.debtDescription" class="textarea" maxlength="2000" placeholder="可简单说明逾期平台和当前情况" />
+        <view class="textarea-meta">{{ descriptionLength }}/2000</view>
+      </template>
       <view class="step-actions">
         <button v-if="step > 0" class="secondary-button" @click="prev">上一步</button>
         <button v-if="step < 4" class="send-button" :class="{ compact: step > 0, disabled: nextDisabled }" @click="next">下一步</button>
@@ -371,6 +375,14 @@ function resetForm() {
 
 .textarea {
   height: 92px;
+}
+
+.textarea-meta {
+  margin-top: 6px;
+  text-align: right;
+  color: #9a9a9a;
+  font-size: 12px;
+  line-height: 1.2;
 }
 
 .chips {

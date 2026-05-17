@@ -97,6 +97,7 @@ const debtAmountMessage = computed(() => validateDebtAmount(form.value.debtAmoun
 const showSurnameHint = computed(() => submitAttempted.value && !!surnameMessage.value)
 const showRegionHint = computed(() => submitAttempted.value && !!regionMessage.value)
 const showDebtAmountHint = computed(() => submitAttempted.value && !!debtAmountMessage.value)
+const descriptionLength = computed(() => form.value.debtDescription.length)
 
 watch(
   form,
@@ -249,6 +250,7 @@ function resetForm() {
 
       <view class="field-title">补充描述</view>
       <textarea v-model="form.debtDescription" class="textarea" maxlength="2000" placeholder="可简单说明逾期平台、收入和当前压力" />
+      <view class="textarea-meta">{{ descriptionLength }}/2000</view>
       <view v-if="submitted" class="success-card">
         信息已收到，人工顾问将结合您的情况做初步评估。您可以继续查看顾问二维码。
       </view>
@@ -340,6 +342,14 @@ function resetForm() {
 .textarea {
   height: 96px;
   padding-top: 12px;
+}
+
+.textarea-meta {
+  margin-top: 6px;
+  text-align: right;
+  color: #9a9a9a;
+  font-size: 12px;
+  line-height: 1.2;
 }
 
 .chips {
