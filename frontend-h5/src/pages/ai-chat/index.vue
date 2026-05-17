@@ -39,6 +39,7 @@ const nextAttempted = ref(false)
 const qrVisible = ref(false)
 const homeData = ref<HomeData>({ assets: {}, serviceSteps: [] })
 const form = ref(defaultForm())
+const draftSavingPaused = ref(false)
 
 const debtTypes = [
   { label: '网贷', value: 'ONLINE_LOAN' },
@@ -82,6 +83,10 @@ const descriptionLength = computed(() => form.value.debtDescription.length)
 watch(
   () => ({ step: step.value, form: form.value }),
   (draft) => {
+    if (draftSavingPaused.value) {
+      draftSavingPaused.value = false
+      return
+    }
     if (!submitted.value) {
       setStorageObject(AI_CHAT_DRAFT_KEY, draft)
     }
@@ -196,6 +201,7 @@ async function submit() {
 }
 
 function resetForm() {
+  draftSavingPaused.value = true
   step.value = 0
   submitted.value = false
   nextAttempted.value = false

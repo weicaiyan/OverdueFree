@@ -45,6 +45,7 @@ const submitting = ref(false)
 const submitted = ref(false)
 const submitAttempted = ref(false)
 const form = ref(defaultForm())
+const draftSavingPaused = ref(false)
 
 const groups = [
   { key: 'ageRange', title: '年龄', options: ['18-25岁', '26-35岁', '36-45岁', '45以上'] },
@@ -102,6 +103,10 @@ const descriptionLength = computed(() => form.value.debtDescription.length)
 watch(
   form,
   (draft) => {
+    if (draftSavingPaused.value) {
+      draftSavingPaused.value = false
+      return
+    }
     if (!submitted.value) {
       setStorageObject(PLAN_FORM_DRAFT_KEY, draft)
     }
@@ -188,6 +193,7 @@ async function submit() {
 }
 
 function resetForm() {
+  draftSavingPaused.value = true
   submitted.value = false
   submitAttempted.value = false
   qrVisible.value = false
