@@ -65,12 +65,17 @@
       <el-main class="admin-main">
         <section v-show="activeSection === 'leads'" class="panel">
           <div class="toolbar">
-            <el-input v-model="leadFilters.keyword" clearable placeholder="手机号/称呼/地区" />
+            <el-input v-model="leadFilters.keyword" clearable placeholder="手机号/称呼" />
+            <el-input v-model="leadFilters.region" clearable placeholder="地区" />
             <el-select v-model="leadFilters.leadType" clearable placeholder="线索类型">
               <el-option label="已提交线索" value="SUBMITTED" />
               <el-option label="仅登录客户" value="LOGIN_ONLY" />
             </el-select>
-            <el-input v-model="leadFilters.debtType" clearable placeholder="债务类型" />
+            <el-select v-model="leadFilters.debtType" clearable placeholder="债务类型">
+              <el-option v-for="item in debtTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
+            </el-select>
+            <el-input v-model="leadFilters.minDebtAmount" clearable placeholder="最低金额" type="number" />
+            <el-input v-model="leadFilters.maxDebtAmount" clearable placeholder="最高金额" type="number" />
             <el-select v-model="leadFilters.viewedWechatQr" clearable placeholder="企微二维码">
               <el-option label="已查看" value="true" />
               <el-option label="未查看" value="false" />
@@ -121,7 +126,7 @@
             <el-table-column label="债务" min-width="160">
               <template #default="{ row }">
                 <strong>{{ formatAmount(row.debtAmount) }}</strong>
-                <span class="muted block">{{ row.debtType || '-' }}</span>
+                <span class="muted block">{{ displayDebtType(row.debtType) }}</span>
               </template>
             </el-table-column>
             <el-table-column label="来源" min-width="128">
@@ -484,7 +489,7 @@
               <el-descriptions-item label="称呼">{{ item.surname || '-' }}</el-descriptions-item>
               <el-descriptions-item label="地区">{{ item.region || '-' }}</el-descriptions-item>
               <el-descriptions-item label="债务金额">{{ formatAmount(item.debtAmount) }}</el-descriptions-item>
-              <el-descriptions-item label="债务类型">{{ item.debtType || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="债务类型">{{ displayDebtType(item.debtType) }}</el-descriptions-item>
               <el-descriptions-item label="备注">{{ item.debtDescription || '-' }}</el-descriptions-item>
             </el-descriptions>
           </el-collapse-item>
@@ -704,14 +709,24 @@ const leadRows = ref<LeadListItem[]>([])
 const leadTotal = ref(0)
 const leadFilters = reactive({
   keyword: '',
+  region: '',
   leadType: '',
   debtType: '',
+  minDebtAmount: '',
+  maxDebtAmount: '',
   viewedWechatQr: '' as '' | 'true' | 'false',
   startTime: '',
   endTime: '',
   page: 1,
   pageSize: 10
 })
+const debtTypeOptions = [
+  { label: '网贷', value: 'ONLINE_LOAN' },
+  { label: '信用卡', value: 'CREDIT_CARD' },
+  { label: '信用贷', value: 'CREDIT_LOAN' },
+  { label: '车贷', value: 'CAR_LOAN' },
+  { label: '其他', value: 'OTHER' }
+]
 const availableExportFields = [
   { value: 'rowType', label: '线索类型' },
   { value: 'customerId', label: '客户ID' },
@@ -912,8 +927,11 @@ async function loadCurrentSection() {
 function buildLeadQuery(includePage = true) {
   return {
     keyword: leadFilters.keyword,
+    region: leadFilters.region,
     leadType: leadFilters.leadType,
     debtType: leadFilters.debtType,
+    minDebtAmount: leadFilters.minDebtAmount || undefined,
+    maxDebtAmount: leadFilters.maxDebtAmount || undefined,
     viewedWechatQr: leadFilters.viewedWechatQr === '' ? undefined : leadFilters.viewedWechatQr === 'true',
     startTime: leadFilters.startTime,
     endTime: leadFilters.endTime,
@@ -942,8 +960,11 @@ function searchLeads() {
 
 function resetLeadFilters() {
   leadFilters.keyword = ''
+  leadFilters.region = ''
   leadFilters.leadType = ''
   leadFilters.debtType = ''
+  leadFilters.minDebtAmount = ''
+  leadFilters.maxDebtAmount = ''
   leadFilters.viewedWechatQr = ''
   leadFilters.startTime = ''
   leadFilters.endTime = ''
@@ -1380,6 +1401,10 @@ function resolveFileUrl(fileUrl?: string) {
 
 function displayRowType(rowType?: string) {
   return rowType === 'SUBMITTED' ? '已提交' : '仅登录'
+}
+
+function displayDebtType(debtType?: string) {
+  return debtTypeOptions.find((item) => item.value === debtType)?.label || debtType || '-'
 }
 
 function displaySource(source?: string) {
