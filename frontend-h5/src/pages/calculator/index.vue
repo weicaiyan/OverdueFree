@@ -148,7 +148,7 @@ function clear() {
 
 <template>
   <view class="calculator-page">
-    <PageHeader title="真实网贷利率计算器" back />
+    <PageHeader title="真实网贷利率计算器" back surface="light" />
     <view class="calc-panel">
       <view class="row">
         <text class="label">分期金额</text>
