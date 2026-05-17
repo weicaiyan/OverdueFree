@@ -47,12 +47,14 @@ Windows 本地演示可以直接双击以下脚本：
 |------|------|
 | `start-mysql.bat` | 启动 Docker MySQL |
 | `backend/start-backend.bat` | 启动后端，并等待健康检查通过 |
-| `start-frontends.bat` | 启动并重启两个前端开发服务 |
+| `start-frontends.bat` | 启动两个前端开发服务 |
 | `start-local-demo.bat` | 依次启动 MySQL、后端、两个前端 |
 
 `start-mysql.bat` 会等待 MySQL 真正可连接后再返回，避免第一次启动 Docker MySQL 时后端过早启动导致连接失败。
 
 `backend/start-backend.bat` 会等待后端 `/api/health` 返回正常后再返回；脚本不提前检查端口占用，如果端口被占用，请按启动窗口里的提示单独处理。
+
+`frontend-h5/start-h5.bat` 和 `admin-web/start-admin-web.bat` 只负责启动开发服务，不提前检查或释放端口占用；如果端口已被占用，请按启动窗口里的提示单独处理。
 
 ### 1. 启动 MySQL
 
