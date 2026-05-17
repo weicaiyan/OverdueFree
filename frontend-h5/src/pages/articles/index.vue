@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { onReachBottom, onShow } from '@dcloudio/uni-app'
 import BottomTabs from '../../components/BottomTabs.vue'
 import PageHeader from '../../components/PageHeader.vue'
 import PageState from '../../components/PageState.vue'
@@ -29,6 +29,10 @@ onShow(async () => {
     return
   }
   loadArticles(true)
+})
+
+onReachBottom(() => {
+  loadArticles(false)
 })
 
 async function loadArticles(reset = true) {
