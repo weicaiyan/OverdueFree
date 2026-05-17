@@ -28,6 +28,7 @@ export async function requireLogin() {
 }
 
 export function saveLoginToken(token: string) {
+  clearCustomerDrafts()
   setCustomerToken(token)
 }
 
