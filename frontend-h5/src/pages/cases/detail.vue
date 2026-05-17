@@ -17,6 +17,7 @@ const qrVisible = ref(false)
 const loading = ref(false)
 const errorText = ref('')
 const avatarFailed = ref(false)
+const detailViewed = ref(false)
 
 onLoad((query) => {
   id.value = Number(query?.id || 0)
@@ -43,6 +44,7 @@ async function loadDetail() {
     const caseDetail = await api.caseDetail(id.value)
     detail.value = caseDetail
     avatarFailed.value = false
+    recordDetailView()
     api.home()
       .then((home) => {
         homeData.value = home
@@ -53,6 +55,20 @@ async function loadDetail() {
   } finally {
     loading.value = false
   }
+}
+
+function recordDetailView() {
+  if (detailViewed.value) {
+    return
+  }
+  detailViewed.value = true
+  api.event({
+    eventType: 'VIEW_CASE_DETAIL',
+    sourcePage: 'CASE_DETAIL',
+    refType: 'SUCCESS_CASE',
+    refId: id.value,
+    metadata: { caseId: id.value }
+  }).catch(() => undefined)
 }
 
 function openApply() {

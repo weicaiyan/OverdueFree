@@ -17,6 +17,7 @@ const qrVisible = ref(false)
 const loading = ref(false)
 const errorText = ref('')
 const coverFailed = ref(false)
+const detailViewed = ref(false)
 
 onLoad((query) => {
   id.value = Number(query?.id || 0)
@@ -43,6 +44,7 @@ async function loadDetail() {
     const article = await api.articleDetail(id.value)
     detail.value = article
     coverFailed.value = false
+    recordDetailView()
     api.home()
       .then((home) => {
         homeData.value = home
@@ -53,6 +55,20 @@ async function loadDetail() {
   } finally {
     loading.value = false
   }
+}
+
+function recordDetailView() {
+  if (detailViewed.value) {
+    return
+  }
+  detailViewed.value = true
+  api.event({
+    eventType: 'VIEW_ARTICLE_DETAIL',
+    sourcePage: 'ARTICLE_DETAIL',
+    refType: 'ARTICLE',
+    refId: id.value,
+    metadata: { articleId: id.value }
+  }).catch(() => undefined)
 }
 
 function openArticleCta() {
