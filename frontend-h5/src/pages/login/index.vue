@@ -4,7 +4,7 @@ import { onShow } from '@dcloudio/uni-app'
 import { api, getErrorMessage } from '../../services/api'
 import { isPhone, saveLoginToken } from '../../services/auth'
 import { redirectAfterLogin } from '../../services/navigation'
-import { clearCustomerToken, getCustomerToken } from '../../services/storage'
+import { clearCustomerDrafts, clearCustomerToken, getCustomerToken } from '../../services/storage'
 
 const phone = ref('')
 const code = ref('')
@@ -67,8 +67,10 @@ onShow(async () => {
       return
     }
     clearCustomerToken()
+    clearCustomerDrafts()
   } catch (error) {
     clearCustomerToken()
+    clearCustomerDrafts()
   }
 })
 
