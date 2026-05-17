@@ -107,6 +107,7 @@ function markCoverFailed(url?: string) {
       v-if="loading && !articles.length"
       title="正在加载资讯"
       subtitle="请稍候"
+      variant="loading"
       compact
     />
     <PageState

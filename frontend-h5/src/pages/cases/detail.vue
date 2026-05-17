@@ -81,6 +81,7 @@ function openApply() {
       v-else-if="loading && !detail"
       title="正在加载详情"
       subtitle="请稍候"
+      variant="loading"
       compact
     />
     <PageState

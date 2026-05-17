@@ -112,6 +112,7 @@ function markAvatarFailed(id: number) {
       v-if="loading && !cases.length"
       title="正在加载案例"
       subtitle="请稍候"
+      variant="loading"
       compact
     />
     <PageState

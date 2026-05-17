@@ -94,6 +94,7 @@ function go(url: string, entry: string) {
       v-if="loading && !loaded"
       title="正在加载首页"
       subtitle="请稍候"
+      variant="loading"
       compact
     />
     <PageState

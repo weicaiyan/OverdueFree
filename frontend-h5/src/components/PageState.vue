@@ -10,9 +10,10 @@ const props = defineProps<{
   subtitle?: string
   actionText?: string
   compact?: boolean
+  variant?: 'default' | 'loading'
 }>()
 
-const loading = computed(() => props.title.startsWith('正在'))
+const loading = computed(() => props.variant === 'loading')
 </script>
 
 <template>
