@@ -50,6 +50,8 @@ Windows 本地演示可以直接双击以下脚本：
 | `start-frontends.bat` | 启动并重启两个前端开发服务 |
 | `start-local-demo.bat` | 依次启动 MySQL、后端、两个前端 |
 
+`start-mysql.bat` 会等待 MySQL 真正可连接后再返回，避免第一次启动 Docker MySQL 时后端过早启动导致连接失败。
+
 ### 1. 启动 MySQL
 
 ```bash
