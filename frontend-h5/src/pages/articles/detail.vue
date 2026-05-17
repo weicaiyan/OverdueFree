@@ -69,7 +69,7 @@ function openArticleCta() {
 
 <template>
   <view class="detail-page">
-    <PageHeader title="资讯详情" back />
+    <PageHeader title="资讯详情" back fallback-url="/pages/articles/index" />
     <PageState
       v-if="!id"
       title="资讯不存在"

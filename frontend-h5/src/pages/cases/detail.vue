@@ -69,7 +69,7 @@ function openApply() {
 
 <template>
   <view class="detail-page">
-    <PageHeader title="案例详情" back />
+    <PageHeader title="案例详情" back fallback-url="/pages/cases/index" />
     <PageState
       v-if="!id"
       title="案例不存在"

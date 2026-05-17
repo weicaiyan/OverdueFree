@@ -4,13 +4,15 @@ import { safeNavigateBack } from '../services/navigation'
 const props = withDefaults(defineProps<{
   title: string
   back?: boolean
+  fallbackUrl?: string
   surface?: 'transparent' | 'light'
 }>(), {
+  fallbackUrl: '/pages/home/index',
   surface: 'transparent'
 })
 
 function goBack() {
-  safeNavigateBack()
+  safeNavigateBack(props.fallbackUrl)
 }
 </script>
 
