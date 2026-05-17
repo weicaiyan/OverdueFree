@@ -197,11 +197,13 @@
             <el-table-column fixed="right" label="操作" width="240">
               <template #default="{ row }">
                 <el-upload
+                  :accept="assetUploadAccept(row)"
+                  :before-upload="beforeAssetUpload(row)"
                   :http-request="handleAssetUpload(row)"
                   :show-file-list="false"
                   class="inline-upload"
                 >
-                  <el-button size="small" type="danger">上传</el-button>
+                  <el-button :loading="isAssetUploading(row.assetKey)" size="small" type="danger">上传</el-button>
                 </el-upload>
                 <el-button size="small" @click="openAssetEdit(row)">编辑标题</el-button>
               </template>
@@ -763,6 +765,7 @@ const leadHistory = ref<CustomerHistory | null>(null)
 
 const assetLoading = ref(false)
 const assets = ref<AssetResource[]>([])
+const uploadingAssetKeys = ref<string[]>([])
 const assetDialogVisible = ref(false)
 const assetForm = reactive({
   assetKey: '',
@@ -1025,6 +1028,10 @@ async function loadAssets() {
 }
 
 async function uploadAsset(row: AssetResource, option: { file: File }) {
+  if (isAssetUploading(row.assetKey)) {
+    return
+  }
+  markAssetUploading(row.assetKey)
   try {
     const category = row.assetKey === 'HOME_VIDEO' ? 'VIDEO' : 'IMAGE'
     const uploadResult = await adminApi.uploadFile(option.file, category)
@@ -1039,11 +1046,69 @@ async function uploadAsset(row: AssetResource, option: { file: File }) {
     ElMessage.success('上传成功')
   } catch (error) {
     ElMessage.error(getErrorMessage(error))
+  } finally {
+    unmarkAssetUploading(row.assetKey)
   }
 }
 
 function handleAssetUpload(row: AssetResource) {
   return (option: { file: File }) => uploadAsset(row, option)
+}
+
+function beforeAssetUpload(row: AssetResource) {
+  return (file: File) => validateAssetFile(row, file)
+}
+
+function validateAssetFile(row: AssetResource, file: File) {
+  if (isVideoAsset(row)) {
+    if (resolveFileExtension(file.name) !== 'mp4' || file.type !== 'video/mp4') {
+      ElMessage.warning('首页视频仅支持 mp4 文件')
+      return false
+    }
+    if (file.size > 500 * 1024 * 1024) {
+      ElMessage.warning('首页视频不能超过 500MB')
+      return false
+    }
+    return true
+  }
+  const imageExtensions = ['jpg', 'jpeg', 'png', 'webp']
+  const imageTypes = ['image/jpeg', 'image/png', 'image/webp']
+  if (!imageExtensions.includes(resolveFileExtension(file.name)) || !imageTypes.includes(file.type)) {
+    ElMessage.warning('图片仅支持 jpg、jpeg、png、webp')
+    return false
+  }
+  if (file.size > 20 * 1024 * 1024) {
+    ElMessage.warning('图片不能超过 20MB')
+    return false
+  }
+  return true
+}
+
+function assetUploadAccept(row: AssetResource) {
+  return isVideoAsset(row) ? 'video/mp4,.mp4' : 'image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp'
+}
+
+function isVideoAsset(row: AssetResource) {
+  return row.assetKey === 'HOME_VIDEO'
+}
+
+function resolveFileExtension(fileName: string) {
+  const lastDotIndex = fileName.lastIndexOf('.')
+  return lastDotIndex >= 0 ? fileName.slice(lastDotIndex + 1).toLowerCase() : ''
+}
+
+function isAssetUploading(assetKey: string) {
+  return uploadingAssetKeys.value.includes(assetKey)
+}
+
+function markAssetUploading(assetKey: string) {
+  if (!isAssetUploading(assetKey)) {
+    uploadingAssetKeys.value.push(assetKey)
+  }
+}
+
+function unmarkAssetUploading(assetKey: string) {
+  uploadingAssetKeys.value = uploadingAssetKeys.value.filter((item) => item !== assetKey)
 }
 
 function openAssetEdit(row: AssetResource) {
