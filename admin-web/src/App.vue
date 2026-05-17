@@ -536,7 +536,17 @@
         <el-input v-model="articleForm.title" maxlength="200" show-word-limit />
       </el-form-item>
       <el-form-item label="封面地址">
-        <el-input v-model="articleForm.coverUrl" placeholder="可填上传后的图片地址" />
+        <div class="url-upload-row">
+          <el-input v-model="articleForm.coverUrl" placeholder="可填上传后的图片地址" />
+          <el-upload
+            :accept="IMAGE_UPLOAD_ACCEPT"
+            :before-upload="beforeContentImageUpload"
+            :http-request="uploadArticleCover"
+            :show-file-list="false"
+          >
+            <el-button :loading="articleCoverUploading">上传图片</el-button>
+          </el-upload>
+        </div>
       </el-form-item>
       <el-form-item label="摘要">
         <el-input v-model="articleForm.summary" maxlength="500" show-word-limit type="textarea" />
@@ -563,7 +573,17 @@
         <el-input v-model="caseForm.maskedPhone" placeholder="例如 138****6357" />
       </el-form-item>
       <el-form-item label="头像地址">
-        <el-input v-model="caseForm.avatarUrl" placeholder="可填上传后的图片地址" />
+        <div class="url-upload-row">
+          <el-input v-model="caseForm.avatarUrl" placeholder="可填上传后的图片地址" />
+          <el-upload
+            :accept="IMAGE_UPLOAD_ACCEPT"
+            :before-upload="beforeContentImageUpload"
+            :http-request="uploadCaseAvatar"
+            :show-file-list="false"
+          >
+            <el-button :loading="caseAvatarUploading">上传图片</el-button>
+          </el-upload>
+        </div>
       </el-form-item>
       <el-form-item label="逾期平台">
         <el-input v-model="caseForm.overduePlatforms" maxlength="500" />
@@ -639,6 +659,9 @@ import {
   type SuccessCaseItem,
   type SystemSettings
 } from './services/api'
+
+const IMAGE_UPLOAD_ACCEPT = 'image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp'
+const VIDEO_UPLOAD_ACCEPT = 'video/mp4,.mp4'
 
 type SectionKey = 'leads' | 'assets' | 'articles' | 'cases' | 'admins' | 'settings' | 'logs'
 
@@ -778,6 +801,7 @@ const assetForm = reactive({
 
 const articleLoading = ref(false)
 const articleSaving = ref(false)
+const articleCoverUploading = ref(false)
 const articles = ref<ArticleItem[]>([])
 const articleTotal = ref(0)
 const articleQuery = reactive({
@@ -798,6 +822,7 @@ const articleForm = reactive<Partial<ArticleItem>>({
 
 const caseLoading = ref(false)
 const caseSaving = ref(false)
+const caseAvatarUploading = ref(false)
 const cases = ref<SuccessCaseItem[]>([])
 const caseTotal = ref(0)
 const caseQuery = reactive({
@@ -1065,16 +1090,24 @@ function beforeAssetUpload(row: AssetResource) {
 
 function validateAssetFile(row: AssetResource, file: File) {
   if (isVideoAsset(row)) {
-    if (resolveFileExtension(file.name) !== 'mp4' || file.type !== 'video/mp4') {
-      ElMessage.warning('首页视频仅支持 mp4 文件')
-      return false
-    }
-    if (file.size > 500 * 1024 * 1024) {
-      ElMessage.warning('首页视频不能超过 500MB')
-      return false
-    }
-    return true
+    return validateVideoFile(file)
   }
+  return validateImageFile(file)
+}
+
+function validateVideoFile(file: File) {
+  if (resolveFileExtension(file.name) !== 'mp4' || file.type !== 'video/mp4') {
+    ElMessage.warning('首页视频仅支持 mp4 文件')
+    return false
+  }
+  if (file.size > 500 * 1024 * 1024) {
+    ElMessage.warning('首页视频不能超过 500MB')
+    return false
+  }
+  return true
+}
+
+function validateImageFile(file: File) {
   const imageExtensions = ['jpg', 'jpeg', 'png', 'webp']
   const imageTypes = ['image/jpeg', 'image/png', 'image/webp']
   if (!imageExtensions.includes(resolveFileExtension(file.name)) || !imageTypes.includes(file.type)) {
@@ -1089,7 +1122,7 @@ function validateAssetFile(row: AssetResource, file: File) {
 }
 
 function assetUploadAccept(row: AssetResource) {
-  return isVideoAsset(row) ? 'video/mp4,.mp4' : 'image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp'
+  return isVideoAsset(row) ? VIDEO_UPLOAD_ACCEPT : IMAGE_UPLOAD_ACCEPT
 }
 
 function isVideoAsset(row: AssetResource) {
@@ -1202,6 +1235,26 @@ async function saveArticle() {
   }
 }
 
+function beforeContentImageUpload(file: File) {
+  return validateImageFile(file)
+}
+
+async function uploadArticleCover(option: { file: File }) {
+  if (articleCoverUploading.value) {
+    return
+  }
+  articleCoverUploading.value = true
+  try {
+    const uploadResult = await adminApi.uploadFile(option.file, 'IMAGE')
+    articleForm.coverUrl = uploadResult.url
+    ElMessage.success('封面上传成功')
+  } catch (error) {
+    ElMessage.error(getErrorMessage(error))
+  } finally {
+    articleCoverUploading.value = false
+  }
+}
+
 async function publishArticle(id: number) {
   await runAndRefresh(() => adminApi.publishArticle(id), loadArticles)
 }
@@ -1277,6 +1330,22 @@ async function saveCase() {
     ElMessage.error(getErrorMessage(error))
   } finally {
     caseSaving.value = false
+  }
+}
+
+async function uploadCaseAvatar(option: { file: File }) {
+  if (caseAvatarUploading.value) {
+    return
+  }
+  caseAvatarUploading.value = true
+  try {
+    const uploadResult = await adminApi.uploadFile(option.file, 'IMAGE')
+    caseForm.avatarUrl = uploadResult.url
+    ElMessage.success('头像上传成功')
+  } catch (error) {
+    ElMessage.error(getErrorMessage(error))
+  } finally {
+    caseAvatarUploading.value = false
   }
 }
 
@@ -1844,6 +1913,20 @@ function getErrorMessage(error: unknown) {
 .inline-upload {
   display: inline-block;
   margin-right: 8px;
+}
+
+.url-upload-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.url-upload-row .el-input {
+  flex: 1;
+}
+
+.url-upload-row .el-button {
+  min-width: 88px;
 }
 
 .muted {
