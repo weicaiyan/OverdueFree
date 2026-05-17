@@ -69,12 +69,13 @@ const currentStepMessage = computed(() => {
 
 const nextDisabled = computed(() => !!currentStepMessage.value)
 const showStepHint = computed(() => nextAttempted.value && !!currentStepMessage.value)
-const submitDisabled = computed(() => submitting.value || !!validateBeforeSubmit())
+const submitDisabled = computed(() => submitting.value)
+const submitBlocked = computed(() => submitting.value || !!validateBeforeSubmit())
 const submitButtonText = computed(() => {
   if (submitting.value) {
     return '提交中...'
   }
-  return submitDisabled.value ? '请先完善信息' : '提交'
+  return submitBlocked.value ? '请先完善信息' : '提交'
 })
 const descriptionLength = computed(() => form.value.debtDescription.length)
 
@@ -254,7 +255,7 @@ function resetForm() {
       <view class="step-actions">
         <button v-if="step > 0" class="secondary-button" @click="prev">上一步</button>
         <button v-if="step < 4" class="send-button" :class="{ compact: step > 0, disabled: nextDisabled }" @click="next">下一步</button>
-        <button v-else class="send-button" :class="{ compact: step > 0, disabled: submitDisabled }" :disabled="submitDisabled" @click="submit">
+        <button v-else class="send-button" :class="{ compact: step > 0, disabled: submitBlocked }" :disabled="submitDisabled" @click="submit">
           {{ submitButtonText }}
         </button>
       </view>
