@@ -9,6 +9,13 @@ export function formatAmount(value?: number | string | null) {
     .replace(/\B(?=(\d{3})+(?!\d))/g, ',')
 }
 
+export function formatAmountText(value?: number | string | null, unit = '元') {
+  if (value === undefined || value === null || value === '') {
+    return '待补充'
+  }
+  return `${formatAmount(value)}${unit}`
+}
+
 export function formatDate(value?: string | null) {
   if (!value) {
     return '待发布'

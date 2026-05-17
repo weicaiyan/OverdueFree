@@ -8,7 +8,7 @@ import { api, resolveFileUrl } from '../../services/api'
 import { requireLogin } from '../../services/auth'
 import { safeReLaunch } from '../../services/navigation'
 import type { HomeData, SuccessCaseItem } from '../../types'
-import { formatAmount } from '../../utils/format'
+import { formatAmountText } from '../../utils/format'
 
 const id = ref(0)
 const detail = ref<SuccessCaseItem | null>(null)
@@ -125,7 +125,7 @@ function openApply() {
         </view>
       </view>
       <view class="item">逾期平台：{{ detail.overduePlatforms || '待补充' }}</view>
-      <view class="item">逾期金额：{{ formatAmount(detail.overdueAmount) }}元</view>
+      <view class="item">逾期金额：{{ formatAmountText(detail.overdueAmount) }}</view>
       <view class="item accent">处理方案：{{ detail.handlingPlan || '人工评估后确认' }}</view>
       <view class="content">{{ detail.detailText || '当前案例详情待补充。' }}</view>
     </view>
