@@ -95,6 +95,15 @@ function go(url: string, entry: string) {
   trackHomeEntry(entry)
   safeNavigateTo(url)
 }
+
+function openHomeQr() {
+  api.event({
+    eventType: 'HOME_CTA',
+    sourcePage: 'HOME',
+    metadata: { entry: 'FIXED_CTA' }
+  }).catch(() => undefined)
+  qrVisible.value = true
+}
 </script>
 
 <template>
@@ -164,7 +173,7 @@ function go(url: string, entry: string) {
         </view>
       </view>
 
-      <button class="fixed-cta" @click="qrVisible = true">领取债务减免延期方案</button>
+      <button class="fixed-cta" @click="openHomeQr">领取债务减免延期方案</button>
     </template>
     <view v-if="videoVisible" class="video-mask" @click="videoVisible = false">
       <view class="video-panel" @click.stop>
