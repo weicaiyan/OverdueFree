@@ -490,6 +490,11 @@
               <el-descriptions-item label="地区">{{ item.region || '-' }}</el-descriptions-item>
               <el-descriptions-item label="债务金额">{{ formatAmount(item.debtAmount) }}</el-descriptions-item>
               <el-descriptions-item label="债务类型">{{ displayDebtType(item.debtType) }}</el-descriptions-item>
+              <el-descriptions-item label="年龄">{{ item.ageRange || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="工作情况">{{ item.jobStatus || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="征信情况">{{ item.creditStatus || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="月收入">{{ item.monthlyIncomeRange || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="月开销">{{ item.monthlyExpenseRange || '-' }}</el-descriptions-item>
               <el-descriptions-item label="备注">{{ item.debtDescription || '-' }}</el-descriptions-item>
             </el-descriptions>
           </el-collapse-item>
@@ -736,10 +741,17 @@ const availableExportFields = [
   { value: 'region', label: '地区' },
   { value: 'debtAmount', label: '债务金额' },
   { value: 'debtType', label: '债务类型' },
+  { value: 'debtDescription', label: '债务描述' },
+  { value: 'ageRange', label: '年龄' },
+  { value: 'jobStatus', label: '工作情况' },
+  { value: 'creditStatus', label: '征信情况' },
+  { value: 'monthlyIncomeRange', label: '月收入' },
+  { value: 'monthlyExpenseRange', label: '月开销' },
   { value: 'source', label: '来源' },
   { value: 'firstLoginAt', label: '首次登录' },
   { value: 'leadCreatedAt', label: '提交时间' },
   { value: 'viewedWechatQr', label: '企微查看' },
+  { value: 'lastWechatQrViewAt', label: '最近查看企微时间' },
   { value: 'latestEventType', label: '最近行为' },
   { value: 'historyCount', label: '历史条数' }
 ]

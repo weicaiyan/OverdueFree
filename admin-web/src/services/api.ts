@@ -47,6 +47,12 @@ export interface LeadListItem {
   region?: string
   debtAmount?: number
   debtType?: string
+  debtDescription?: string
+  ageRange?: string
+  jobStatus?: string
+  creditStatus?: string
+  monthlyIncomeRange?: string
+  monthlyExpenseRange?: string
   source?: string
   firstLoginAt?: string
   leadCreatedAt?: string
