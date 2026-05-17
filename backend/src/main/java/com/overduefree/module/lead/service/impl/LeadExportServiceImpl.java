@@ -27,6 +27,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +39,31 @@ public class LeadExportServiceImpl implements LeadExportService {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final Map<String, String> DEBT_TYPE_DISPLAY_MAP = createDisplayMap(new String[][] {
+        {"ONLINE_LOAN", "网贷"},
+        {"CREDIT_CARD", "信用卡"},
+        {"CREDIT_LOAN", "信用贷"},
+        {"CAR_LOAN", "车贷"},
+        {"OTHER", "其他"}
+    });
+    private static final Map<String, String> SOURCE_DISPLAY_MAP = createDisplayMap(new String[][] {
+        {"AI_CHAT", "AI聊天"},
+        {"PLAN_ASSESSMENT", "规划表单"},
+        {"DEBT_PLAN", "规划表单"},
+        {"HOME_CTA", "首页按钮"}
+    });
+    private static final Map<String, String> EVENT_TYPE_DISPLAY_MAP = createDisplayMap(new String[][] {
+        {"VIEW_WECHAT_QR", "查看顾问二维码"},
+        {"CLICK_HOME_ENTRY", "点击首页入口"},
+        {"HOME_CTA", "点击首页咨询按钮"},
+        {"PROFILE_CTA", "点击个人中心咨询"},
+        {"CASE_APPLY", "点击案例申请"},
+        {"ARTICLE_CTA", "点击资讯咨询按钮"},
+        {"VIEW_HOME_VIDEO", "查看首页视频"},
+        {"VIEW_CASE_DETAIL", "查看案例详情"},
+        {"VIEW_ARTICLE_DETAIL", "查看资讯详情"},
+        {"USE_CALCULATOR", "使用利率计算器"}
+    });
     private static final List<LeadExportField> DEFAULT_FIELDS = Arrays.asList(
         new LeadExportField("rowType", "线索类型", item -> displayRowType(item.getRowType())),
         new LeadExportField("customerId", "客户ID", LeadListItem::getCustomerId),
@@ -46,13 +72,13 @@ public class LeadExportServiceImpl implements LeadExportService {
         new LeadExportField("surname", "称呼", LeadListItem::getSurname),
         new LeadExportField("region", "地区", LeadListItem::getRegion),
         new LeadExportField("debtAmount", "债务金额", LeadExportServiceImpl::displayAmount),
-        new LeadExportField("debtType", "债务类型", LeadListItem::getDebtType),
-        new LeadExportField("source", "来源", LeadListItem::getSource),
+        new LeadExportField("debtType", "债务类型", item -> displayMappedValue(item.getDebtType(), DEBT_TYPE_DISPLAY_MAP)),
+        new LeadExportField("source", "来源", item -> displayMappedValue(item.getSource(), SOURCE_DISPLAY_MAP)),
         new LeadExportField("firstLoginAt", "首次登录时间", item -> displayDateTime(item.getFirstLoginAt())),
         new LeadExportField("leadCreatedAt", "提交时间", item -> displayDateTime(item.getLeadCreatedAt())),
         new LeadExportField("viewedWechatQr", "是否查看企微二维码", item -> displayBoolean(item.getViewedWechatQr())),
         new LeadExportField("lastWechatQrViewAt", "最近查看企微二维码时间", item -> displayDateTime(item.getLastWechatQrViewAt())),
-        new LeadExportField("latestEventType", "最近行为", LeadListItem::getLatestEventType),
+        new LeadExportField("latestEventType", "最近行为", item -> displayMappedValue(item.getLatestEventType(), EVENT_TYPE_DISPLAY_MAP)),
         new LeadExportField("latestEventAt", "最近行为时间", item -> displayDateTime(item.getLatestEventAt())),
         new LeadExportField("historyCount", "历史线索数", LeadListItem::getHistoryCount)
     );
@@ -162,6 +188,13 @@ public class LeadExportServiceImpl implements LeadExportService {
         return rowType;
     }
 
+    private static String displayMappedValue(String value, Map<String, String> displayMap) {
+        if (!StringUtils.hasText(value)) {
+            return "";
+        }
+        return displayMap.getOrDefault(value, value);
+    }
+
     private static String displayBoolean(Boolean value) {
         if (value == null) {
             return "";
@@ -182,6 +215,14 @@ public class LeadExportServiceImpl implements LeadExportService {
             return "";
         }
         return debtAmount;
+    }
+
+    private static Map<String, String> createDisplayMap(String[][] entries) {
+        Map<String, String> map = new LinkedHashMap<>();
+        for (String[] entry : entries) {
+            map.put(entry[0], entry[1]);
+        }
+        return Collections.unmodifiableMap(map);
     }
 
     private static class LeadExportField {
