@@ -43,7 +43,9 @@ const homeData = ref<HomeData>({ assets: {}, serviceSteps: [] })
 const qrVisible = ref(false)
 const submitting = ref(false)
 const submitted = ref(false)
+const submitAttempted = ref(false)
 const form = ref(defaultForm())
+const draftSavingPaused = ref(false)
 
 const groups = [
   { key: 'ageRange', title: '年龄', options: ['18-25岁', '26-35岁', '36-45岁', '45以上'] },
@@ -77,7 +79,8 @@ const requiredProgressStyle = computed(() => ({
 }))
 
 const formReady = computed(() => requiredFilledCount.value === 4)
-const submitDisabled = computed(() => submitting.value || (!submitted.value && !formReady.value))
+const submitDisabled = computed(() => submitting.value)
+const submitBlocked = computed(() => submitting.value || (!submitted.value && !formReady.value))
 
 const submitText = computed(() => {
   if (submitting.value) {
@@ -89,9 +92,21 @@ const submitText = computed(() => {
   return formReady.value ? '获取规划方案' : '请先完善必填信息'
 })
 
+const surnameMessage = computed(() => validateSurname(form.value.surname))
+const regionMessage = computed(() => validateRegion(form.value.region))
+const debtAmountMessage = computed(() => validateDebtAmount(form.value.debtAmount))
+const showSurnameHint = computed(() => submitAttempted.value && !!surnameMessage.value)
+const showRegionHint = computed(() => submitAttempted.value && !!regionMessage.value)
+const showDebtAmountHint = computed(() => submitAttempted.value && !!debtAmountMessage.value)
+const descriptionLength = computed(() => form.value.debtDescription.length)
+
 watch(
   form,
   (draft) => {
+    if (draftSavingPaused.value) {
+      draftSavingPaused.value = false
+      return
+    }
     if (!submitted.value) {
       setStorageObject(PLAN_FORM_DRAFT_KEY, draft)
     }
@@ -107,7 +122,7 @@ onShow(async () => {
   try {
     homeData.value = await api.home()
   } catch (error) {
-    uni.showToast({ title: '顾问二维码加载失败', icon: 'none' })
+    // 二维码素材失败不影响表单填写，弹窗会展示占位提示。
   }
 })
 
@@ -137,6 +152,7 @@ async function submit() {
     qrVisible.value = true
     return
   }
+  submitAttempted.value = true
   if (submitting.value) {
     return
   }
@@ -177,7 +193,9 @@ async function submit() {
 }
 
 function resetForm() {
+  draftSavingPaused.value = true
   submitted.value = false
+  submitAttempted.value = false
   qrVisible.value = false
   form.value = defaultForm()
   removeStorageItem(PLAN_FORM_DRAFT_KEY)
@@ -200,10 +218,13 @@ function resetForm() {
       </view>
       <view class="field-title">怎么称呼您 *</view>
       <input v-model="form.surname" class="field" maxlength="50" placeholder="例如：张先生" />
+      <view v-if="showSurnameHint" class="field-hint">{{ surnameMessage }}</view>
       <view class="field-title">所在地区 *</view>
       <input v-model="form.region" class="field" maxlength="100" placeholder="例如：重庆" />
+      <view v-if="showRegionHint" class="field-hint">{{ regionMessage }}</view>
       <view class="field-title">债务金额 *</view>
       <input v-model="form.debtAmount" class="field" type="digit" maxlength="13" placeholder="例如：50000" />
+      <view v-if="showDebtAmountHint" class="field-hint">{{ debtAmountMessage }}</view>
 
       <view class="field-title">债务类型 *</view>
       <view class="chips">
@@ -235,12 +256,13 @@ function resetForm() {
 
       <view class="field-title">补充描述</view>
       <textarea v-model="form.debtDescription" class="textarea" maxlength="2000" placeholder="可简单说明逾期平台、收入和当前压力" />
+      <view class="textarea-meta">{{ descriptionLength }}/2000</view>
       <view v-if="submitted" class="success-card">
         信息已收到，人工顾问将结合您的情况做初步评估。您可以继续查看顾问二维码。
       </view>
       <button v-if="submitted" class="reset-button" @click="resetForm">重新填写</button>
     </view>
-    <button class="fixed-cta" :class="{ submitted, disabled: submitDisabled }" :disabled="submitDisabled" @click="submit">{{ submitText }}</button>
+    <button class="fixed-cta" :class="{ submitted, disabled: submitBlocked }" :disabled="submitDisabled" @click="submit">{{ submitText }}</button>
     <WechatQrModal :visible="qrVisible" :asset="homeData.assets.wechatQr" source-page="PLAN_FORM" @close="qrVisible = false" />
   </view>
 </template>
@@ -302,6 +324,13 @@ function resetForm() {
   font-weight: 800;
 }
 
+.field-hint {
+  margin-top: 8px;
+  color: #f75a50;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 .field,
 .textarea {
   width: 100%;
@@ -319,6 +348,14 @@ function resetForm() {
 .textarea {
   height: 96px;
   padding-top: 12px;
+}
+
+.textarea-meta {
+  margin-top: 6px;
+  text-align: right;
+  color: #9a9a9a;
+  font-size: 12px;
+  line-height: 1.2;
 }
 
 .chips {

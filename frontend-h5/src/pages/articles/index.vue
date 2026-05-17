@@ -1,18 +1,22 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { onPullDownRefresh, onReachBottom, onShow } from '@dcloudio/uni-app'
 import BottomTabs from '../../components/BottomTabs.vue'
 import PageHeader from '../../components/PageHeader.vue'
 import PageState from '../../components/PageState.vue'
+import WechatQrModal from '../../components/WechatQrModal.vue'
 import { api, resolveFileUrl } from '../../services/api'
 import { requireLogin } from '../../services/auth'
 import { safeNavigateTo } from '../../services/navigation'
-import type { ArticleItem } from '../../types'
+import type { ArticleItem, HomeData } from '../../types'
 import { formatDate } from '../../utils/format'
 
 const articles = ref<ArticleItem[]>([])
+const homeData = ref<HomeData>({ assets: {}, serviceSteps: [] })
+const qrVisible = ref(false)
 const loading = ref(false)
 const loadingMore = ref(false)
+const loaded = ref(false)
 const errorText = ref('')
 const page = ref(1)
 const pageSize = 10
@@ -25,7 +29,18 @@ onShow(async () => {
   if (!(await requireLogin())) {
     return
   }
-  loadArticles(true)
+  if (!loaded.value && !loading.value) {
+    loadArticles(true)
+  }
+})
+
+onReachBottom(() => {
+  loadArticles(false)
+})
+
+onPullDownRefresh(async () => {
+  await loadArticles(true)
+  uni.stopPullDownRefresh()
 })
 
 async function loadArticles(reset = true) {
@@ -50,9 +65,21 @@ async function loadArticles(reset = true) {
     articles.value = reset ? articlePage.list : articles.value.concat(articlePage.list)
     total.value = articlePage.total
     page.value = articlePage.page
+    loaded.value = true
+    if (reset) {
+      api.home()
+        .then((home) => {
+          homeData.value = home
+        })
+        .catch(() => undefined)
+    }
   } catch (error) {
     if (reset) {
-      errorText.value = '资讯加载失败，请检查后端服务或稍后重试'
+      if (!articles.value.length) {
+        errorText.value = '资讯加载失败，请检查后端服务或稍后重试'
+      } else {
+        uni.showToast({ title: '刷新资讯失败', icon: 'none' })
+      }
     } else {
       uni.showToast({ title: '加载更多失败', icon: 'none' })
     }
@@ -64,6 +91,15 @@ async function loadArticles(reset = true) {
 
 function goDetail(id: number) {
   safeNavigateTo(`/pages/articles/detail?id=${id}`)
+}
+
+function openArticleCta() {
+  api.event({
+    eventType: 'ARTICLE_CTA',
+    sourcePage: 'ARTICLES',
+    metadata: { source: 'fixedCta' }
+  }).catch(() => undefined)
+  qrVisible.value = true
 }
 
 function coverFailed(url?: string) {
@@ -84,6 +120,7 @@ function markCoverFailed(url?: string) {
       v-if="loading && !articles.length"
       title="正在加载资讯"
       subtitle="请稍候"
+      variant="loading"
       compact
     />
     <PageState
@@ -120,6 +157,13 @@ function markCoverFailed(url?: string) {
       </button>
       <view v-else class="list-end">已展示全部资讯</view>
     </view>
+    <button class="fixed-cta" @click="openArticleCta">领取债务减免延期方案</button>
+    <WechatQrModal
+      :visible="qrVisible"
+      :asset="homeData.assets.wechatQr"
+      source-page="ARTICLES"
+      @close="qrVisible = false"
+    />
     <BottomTabs active="articles" />
   </view>
 </template>
@@ -127,7 +171,7 @@ function markCoverFailed(url?: string) {
 <style scoped>
 .article-page {
   min-height: 100vh;
-  padding: 0 16px calc(94px + env(safe-area-inset-bottom));
+  padding: 0 16px calc(156px + env(safe-area-inset-bottom));
   box-sizing: border-box;
   background: #fff4ea;
 }
@@ -212,5 +256,19 @@ function markCoverFailed(url?: string) {
   text-align: center;
   color: #9a9a9a;
   font-size: 13px;
+}
+
+.fixed-cta {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: calc(88px + env(safe-area-inset-bottom));
+  z-index: 25;
+  height: 58px;
+  border-radius: 30px;
+  color: #ffffff;
+  background: #ef5a4f;
+  font-size: 18px;
+  font-weight: 800;
 }
 </style>

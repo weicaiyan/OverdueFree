@@ -17,6 +17,7 @@ const qrVisible = ref(false)
 const loading = ref(false)
 const errorText = ref('')
 const coverFailed = ref(false)
+const detailViewed = ref(false)
 
 onLoad((query) => {
   id.value = Number(query?.id || 0)
@@ -40,15 +41,34 @@ async function loadDetail() {
   loading.value = true
   errorText.value = ''
   try {
-    const [article, home] = await Promise.all([api.articleDetail(id.value), api.home()])
+    const article = await api.articleDetail(id.value)
     detail.value = article
-    homeData.value = home
     coverFailed.value = false
+    recordDetailView()
+    api.home()
+      .then((home) => {
+        homeData.value = home
+      })
+      .catch(() => undefined)
   } catch (error) {
     errorText.value = '资讯详情加载失败，请稍后重试'
   } finally {
     loading.value = false
   }
+}
+
+function recordDetailView() {
+  if (detailViewed.value) {
+    return
+  }
+  detailViewed.value = true
+  api.event({
+    eventType: 'VIEW_ARTICLE_DETAIL',
+    sourcePage: 'ARTICLE_DETAIL',
+    refType: 'ARTICLE',
+    refId: id.value,
+    metadata: { articleId: id.value }
+  }).catch(() => undefined)
 }
 
 function openArticleCta() {
@@ -65,7 +85,7 @@ function openArticleCta() {
 
 <template>
   <view class="detail-page">
-    <PageHeader title="资讯详情" back />
+    <PageHeader title="资讯详情" back fallback-url="/pages/articles/index" />
     <PageState
       v-if="!id"
       title="资讯不存在"
@@ -77,6 +97,7 @@ function openArticleCta() {
       v-else-if="loading && !detail"
       title="正在加载详情"
       subtitle="请稍候"
+      variant="loading"
       compact
     />
     <PageState

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { onPullDownRefresh, onReachBottom, onShow } from '@dcloudio/uni-app'
 import BottomTabs from '../../components/BottomTabs.vue'
 import PageHeader from '../../components/PageHeader.vue'
 import PageState from '../../components/PageState.vue'
@@ -9,13 +9,14 @@ import { api, resolveFileUrl } from '../../services/api'
 import { requireLogin } from '../../services/auth'
 import { safeNavigateTo } from '../../services/navigation'
 import type { HomeData, SuccessCaseItem } from '../../types'
-import { formatAmount } from '../../utils/format'
+import { formatAmountText } from '../../utils/format'
 
 const cases = ref<SuccessCaseItem[]>([])
 const homeData = ref<HomeData>({ assets: {}, serviceSteps: [] })
 const qrVisible = ref(false)
 const loading = ref(false)
 const loadingMore = ref(false)
+const loaded = ref(false)
 const errorText = ref('')
 const page = ref(1)
 const pageSize = 10
@@ -28,7 +29,18 @@ onShow(async () => {
   if (!(await requireLogin())) {
     return
   }
-  loadData(true)
+  if (!loaded.value && !loading.value) {
+    loadData(true)
+  }
+})
+
+onReachBottom(() => {
+  loadData(false)
+})
+
+onPullDownRefresh(async () => {
+  await loadData(true)
+  uni.stopPullDownRefresh()
 })
 
 async function loadData(reset = true) {
@@ -47,12 +59,17 @@ async function loadData(reset = true) {
   }
   try {
     if (reset) {
-      const [casePage, home] = await Promise.all([api.cases(nextPage, pageSize), api.home()])
+      const casePage = await api.cases(nextPage, pageSize)
       cases.value = casePage.list
-      homeData.value = home
       total.value = casePage.total
       page.value = casePage.page
+      loaded.value = true
       failedAvatarIds.value = []
+      api.home()
+        .then((home) => {
+          homeData.value = home
+        })
+        .catch(() => undefined)
     } else {
       const casePage = await api.cases(nextPage, pageSize)
       cases.value = cases.value.concat(casePage.list)
@@ -61,7 +78,11 @@ async function loadData(reset = true) {
     }
   } catch (error) {
     if (reset) {
-      errorText.value = '案例加载失败，请检查后端服务或稍后重试'
+      if (!cases.value.length) {
+        errorText.value = '案例加载失败，请检查后端服务或稍后重试'
+      } else {
+        uni.showToast({ title: '刷新案例失败', icon: 'none' })
+      }
     } else {
       uni.showToast({ title: '加载更多失败', icon: 'none' })
     }
@@ -104,6 +125,7 @@ function markAvatarFailed(id: number) {
       v-if="loading && !cases.length"
       title="正在加载案例"
       subtitle="请稍候"
+      variant="loading"
       compact
     />
     <PageState
@@ -140,7 +162,7 @@ function markAvatarFailed(id: number) {
         </view>
         <view class="line" />
         <view class="info-row">逾期平台：{{ item.overduePlatforms || '待补充' }}</view>
-        <view class="info-row">逾期金额：<text class="amount">{{ formatAmount(item.overdueAmount) }}</text>元</view>
+        <view class="info-row">逾期金额：<text class="amount">{{ formatAmountText(item.overdueAmount) }}</text></view>
         <view class="info-row">处理方案：<text class="plan">{{ item.handlingPlan || '人工评估后确认' }}</text></view>
         <button class="detail-link" @click="goDetail(item.id)">查看详情</button>
       </view>

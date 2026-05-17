@@ -8,7 +8,7 @@ import { api, resolveFileUrl } from '../../services/api'
 import { requireLogin } from '../../services/auth'
 import { safeReLaunch } from '../../services/navigation'
 import type { HomeData, SuccessCaseItem } from '../../types'
-import { formatAmount } from '../../utils/format'
+import { formatAmountText } from '../../utils/format'
 
 const id = ref(0)
 const detail = ref<SuccessCaseItem | null>(null)
@@ -17,6 +17,7 @@ const qrVisible = ref(false)
 const loading = ref(false)
 const errorText = ref('')
 const avatarFailed = ref(false)
+const detailViewed = ref(false)
 
 onLoad((query) => {
   id.value = Number(query?.id || 0)
@@ -40,15 +41,34 @@ async function loadDetail() {
   loading.value = true
   errorText.value = ''
   try {
-    const [caseDetail, home] = await Promise.all([api.caseDetail(id.value), api.home()])
+    const caseDetail = await api.caseDetail(id.value)
     detail.value = caseDetail
-    homeData.value = home
     avatarFailed.value = false
+    recordDetailView()
+    api.home()
+      .then((home) => {
+        homeData.value = home
+      })
+      .catch(() => undefined)
   } catch (error) {
     errorText.value = '案例详情加载失败，请稍后重试'
   } finally {
     loading.value = false
   }
+}
+
+function recordDetailView() {
+  if (detailViewed.value) {
+    return
+  }
+  detailViewed.value = true
+  api.event({
+    eventType: 'VIEW_CASE_DETAIL',
+    sourcePage: 'CASE_DETAIL',
+    refType: 'SUCCESS_CASE',
+    refId: id.value,
+    metadata: { caseId: id.value }
+  }).catch(() => undefined)
 }
 
 function openApply() {
@@ -65,7 +85,7 @@ function openApply() {
 
 <template>
   <view class="detail-page">
-    <PageHeader title="案例详情" back />
+    <PageHeader title="案例详情" back fallback-url="/pages/cases/index" />
     <PageState
       v-if="!id"
       title="案例不存在"
@@ -77,6 +97,7 @@ function openApply() {
       v-else-if="loading && !detail"
       title="正在加载详情"
       subtitle="请稍候"
+      variant="loading"
       compact
     />
     <PageState
@@ -104,7 +125,7 @@ function openApply() {
         </view>
       </view>
       <view class="item">逾期平台：{{ detail.overduePlatforms || '待补充' }}</view>
-      <view class="item">逾期金额：{{ formatAmount(detail.overdueAmount) }}元</view>
+      <view class="item">逾期金额：{{ formatAmountText(detail.overdueAmount) }}</view>
       <view class="item accent">处理方案：{{ detail.handlingPlan || '人工评估后确认' }}</view>
       <view class="content">{{ detail.detailText || '当前案例详情待补充。' }}</view>
     </view>

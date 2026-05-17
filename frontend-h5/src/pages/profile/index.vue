@@ -8,7 +8,7 @@ import { api } from '../../services/api'
 import { logout, requireLogin } from '../../services/auth'
 import type { HomeData } from '../../types'
 
-type InfoType = 'about' | 'terms' | 'privacy' | 'contact'
+type InfoType = 'about' | 'terms' | 'privacy'
 
 const homeData = ref<HomeData>({ assets: {}, serviceSteps: [] })
 const qrVisible = ref(false)
@@ -31,10 +31,6 @@ const infoMap: Record<InfoType, { title: string; content: string }> = {
     title: '隐私协议',
     content:
       '本演示系统会记录手机号、提交的债务初评信息以及查看顾问二维码等行为，用于本地演示线索管理流程。正式上线前需补充完整隐私政策，并明确数据收集、使用、保存和删除规则。'
-  },
-  contact: {
-    title: '联系我们',
-    content: '演示版暂未配置正式联系方式。可点击底部按钮查看顾问二维码占位信息。'
   }
 }
 
@@ -53,6 +49,15 @@ function openInfo(type: InfoType) {
   infoTitle.value = infoMap[type].title
   infoContent.value = infoMap[type].content
   infoVisible.value = true
+}
+
+function openProfileQr(entry: string) {
+  api.event({
+    eventType: 'PROFILE_CTA',
+    sourcePage: 'PROFILE',
+    metadata: { entry }
+  }).catch(() => undefined)
+  qrVisible.value = true
 }
 
 function confirmLogout() {
@@ -90,14 +95,14 @@ function confirmLogout() {
         <view class="menu-icon">→</view>
         <view class="menu-text">退出登录</view>
       </button>
-      <button class="menu-item" @click="qrVisible = true">
+      <button class="menu-item" @click="openProfileQr('CONTACT_MENU')">
         <view class="menu-icon">✉</view>
         <view class="menu-text">联系我们</view>
         <view class="menu-extra">扫码咨询</view>
       </button>
     </view>
     <view class="record">演示版暂未配置备案信息</view>
-    <button class="fixed-cta" @click="qrVisible = true">领取债务减免延期方案</button>
+    <button class="fixed-cta" @click="openProfileQr('FIXED_CTA')">领取债务减免延期方案</button>
     <view v-if="infoVisible" class="info-mask" @click="infoVisible = false">
       <view class="info-panel" @click.stop>
         <view class="info-title">{{ infoTitle }}</view>

@@ -1,6 +1,6 @@
 import type { ArticleItem, HomeData, LeadPayload, PageResult, SuccessCaseItem } from '../types'
 import { goLoginWithRedirect } from './navigation'
-import { clearCustomerToken, getCustomerToken } from './storage'
+import { clearCustomerDrafts, clearCustomerToken, getCustomerToken } from './storage'
 
 interface ApiResponse<T> {
   code: number
@@ -20,6 +20,7 @@ export const API_BASE_URL = configuredApiBaseUrl.replace(/\/+$/, '')
 
 function handleAuthExpired(options: RequestOptions) {
   clearCustomerToken()
+  clearCustomerDrafts()
   if (options.authRedirect !== false) {
     goLoginWithRedirect()
   }

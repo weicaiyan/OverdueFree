@@ -34,6 +34,9 @@ export function validateRegion(value: string) {
 
 export function validateDebtAmount(value: string) {
   const text = value.trim()
+  if (!text) {
+    return '请输入债务金额'
+  }
   if (!/^\d+(\.\d{1,2})?$/.test(text)) {
     return '债务金额最多保留2位小数'
   }

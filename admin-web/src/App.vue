@@ -136,7 +136,7 @@
             </el-table-column>
             <el-table-column label="最近行为" min-width="172">
               <template #default="{ row }">
-                {{ row.latestEventType || '-' }}
+                {{ displayEventType(row.latestEventType) }}
                 <span class="muted block">{{ formatDateTime(row.latestEventAt) }}</span>
               </template>
             </el-table-column>
@@ -497,7 +497,8 @@
             :key="item.id"
             :timestamp="formatDateTime(item.createdAt)"
           >
-            {{ item.eventType }} <span class="muted">{{ item.sourcePage || '' }}</span>
+            {{ displayEventType(item.eventType) }}
+            <span class="muted">{{ displaySourcePage(item.sourcePage) }}</span>
           </el-timeline-item>
         </el-timeline>
       </template>
@@ -1388,6 +1389,37 @@ function displaySource(source?: string) {
     HOME_CTA: '首页按钮'
   }
   return source ? map[source] || source : '-'
+}
+
+function displayEventType(eventType?: string) {
+  const map: Record<string, string> = {
+    VIEW_WECHAT_QR: '查看顾问二维码',
+    CLICK_HOME_ENTRY: '点击首页入口',
+    HOME_CTA: '点击首页咨询按钮',
+    PROFILE_CTA: '点击个人中心咨询',
+    CASE_APPLY: '点击案例申请',
+    ARTICLE_CTA: '点击资讯咨询按钮',
+    VIEW_HOME_VIDEO: '查看首页视频',
+    VIEW_CASE_DETAIL: '查看案例详情',
+    VIEW_ARTICLE_DETAIL: '查看资讯详情',
+    USE_CALCULATOR: '使用利率计算器'
+  }
+  return eventType ? map[eventType] || eventType : '-'
+}
+
+function displaySourcePage(sourcePage?: string) {
+  const map: Record<string, string> = {
+    HOME: '首页',
+    CASES: '成功案例',
+    CASE_DETAIL: '案例详情',
+    ARTICLES: '资讯列表',
+    ARTICLE_DETAIL: '资讯详情',
+    PROFILE: '个人中心',
+    AI_CHAT: 'AI咨询',
+    PLAN_FORM: '规划评估',
+    CALCULATOR: '利率计算器'
+  }
+  return sourcePage ? map[sourcePage] || sourcePage : ''
 }
 
 function displayStatus(status?: string) {

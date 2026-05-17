@@ -10,9 +10,11 @@ const periods = ref('12')
 const upfrontFeePercent = ref('0')
 const monthlyFeePercent = ref('0.70')
 const calculated = ref(false)
+const calculateAttempted = ref(false)
 
 watch([principal, periods, upfrontFeePercent, monthlyFeePercent], () => {
   calculated.value = false
+  calculateAttempted.value = false
 })
 
 function estimateMonthlyIrr(netReceived: number, monthlyPayment: number, months: number) {
@@ -99,12 +101,29 @@ const result = computed(() => {
 })
 
 const canCalculate = computed(() => !validationMessage.value && !!result.value)
+const calculateBlocked = computed(() => !canCalculate.value)
+const showValidationTip = computed(() => calculateAttempted.value && !!validationMessage.value)
+const resultRows = computed(() => {
+  if (!result.value) {
+    return []
+  }
+  return [
+    { label: '实际到账约', value: `${result.value.netReceived} 元` },
+    { label: '每期本金约', value: `${result.value.principalPerPeriod} 元` },
+    { label: '每期手续费约', value: `${result.value.monthlyFee} 元` },
+    { label: '每期还款约', value: `${result.value.monthlyPayment} 元` },
+    { label: '总手续费约', value: `${result.value.totalFee} 元` },
+    { label: '名义年化参考', value: `${result.value.nominalAnnualized}%` },
+    { label: '现金流估算年化约', value: `${result.value.actualAnnualized}%`, highlight: true }
+  ]
+})
 
 onShow(async () => {
   await requireLogin()
 })
 
 async function calculate() {
+  calculateAttempted.value = true
   if (validationMessage.value || !result.value) {
     uni.showToast({ title: validationMessage.value || '请填写正确金额和期数', icon: 'none' })
     return
@@ -123,50 +142,53 @@ function clear() {
   upfrontFeePercent.value = ''
   monthlyFeePercent.value = ''
   calculated.value = false
+  calculateAttempted.value = false
 }
 </script>
 
 <template>
   <view class="calculator-page">
-    <PageHeader title="真实网贷利率计算器" back />
+    <PageHeader title="真实网贷利率计算器" back surface="light" />
     <view class="calc-panel">
       <view class="row">
         <text class="label">分期金额</text>
-        <input v-model="principal" class="field" type="digit" />
+        <input v-model="principal" class="field" type="digit" placeholder="借款本金" @confirm="calculate" />
         <text class="unit">元</text>
       </view>
       <view class="row">
         <text class="label">分期期数</text>
-        <input v-model="periods" class="field" type="number" maxlength="3" />
+        <input v-model="periods" class="field" type="number" maxlength="3" placeholder="期数" @confirm="calculate" />
         <text class="unit">期</text>
       </view>
       <view class="row">
         <text class="label">一次性手续费</text>
-        <input v-model="upfrontFeePercent" class="field" type="digit" />
+        <input v-model="upfrontFeePercent" class="field" type="digit" placeholder="没有填0" @confirm="calculate" />
         <text class="unit">%</text>
       </view>
       <view class="row">
         <text class="label">每期手续费（利率）</text>
-        <input v-model="monthlyFeePercent" class="field" type="digit" />
+        <input v-model="monthlyFeePercent" class="field" type="digit" placeholder="例如0.70" @confirm="calculate" />
         <text class="unit">%</text>
       </view>
       <view class="formula">注：按到账金额和每期还款现金流估算实际年化</view>
       <view class="actions">
-        <button class="primary" :class="{ disabled: !canCalculate }" :disabled="!canCalculate" @click="calculate">计算</button>
+        <button class="primary" :class="{ disabled: calculateBlocked }" @click="calculate">计算</button>
         <button class="secondary" @click="clear">清除</button>
       </view>
-      <view v-if="validationMessage" class="validation-tip">{{ validationMessage }}</view>
+      <view v-if="showValidationTip" class="validation-tip">{{ validationMessage }}</view>
     </view>
 
     <view v-if="calculated && result" class="result-card">
-      <view class="result-title">估算结果</view>
-      <view class="result-line">实际到账约：{{ result.netReceived }} 元</view>
-      <view class="result-line">每期本金约：{{ result.principalPerPeriod }} 元</view>
-      <view class="result-line">每期手续费约：{{ result.monthlyFee }} 元</view>
-      <view class="result-line">每期还款约：{{ result.monthlyPayment }} 元</view>
-      <view class="result-line">总手续费约：{{ result.totalFee }} 元</view>
-      <view class="result-line">名义年化参考：{{ result.nominalAnnualized }}%</view>
-      <view class="result-line highlight">现金流估算年化约：{{ result.actualAnnualized }}%</view>
+      <view class="result-head">
+        <view class="result-title">估算结果</view>
+        <view class="result-badge">仅本地计算</view>
+      </view>
+      <view class="result-list">
+        <view v-for="row in resultRows" :key="row.label" class="result-line" :class="{ highlight: row.highlight }">
+          <text>{{ row.label }}</text>
+          <text>{{ row.value }}</text>
+        </view>
+      </view>
       <view class="tip">以上计算结果仅供参考，实际费用以合同和平台规则为准。</view>
     </view>
 
@@ -269,6 +291,13 @@ function clear() {
   border-top: 1px solid #dddddd;
 }
 
+.result-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .result-title,
 .intro-title {
   font-size: 22px;
@@ -276,7 +305,46 @@ function clear() {
   color: #666666;
 }
 
-.result-line,
+.result-badge {
+  flex: 0 0 auto;
+  padding: 5px 10px;
+  border-radius: 999px;
+  color: #f75a50;
+  background: #fff0ee;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.result-list {
+  margin-top: 14px;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid #eeeeee;
+}
+
+.result-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 42px;
+  padding: 0 14px;
+  border-bottom: 1px solid #eeeeee;
+  color: #666666;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.result-line:last-child {
+  border-bottom: 0;
+}
+
+.result-line text:last-child {
+  color: #333333;
+  font-weight: 800;
+  text-align: right;
+}
+
 .intro-text {
   margin-top: 14px;
   color: #666666;
@@ -286,8 +354,13 @@ function clear() {
 
 .result-line.highlight {
   color: #f75a50;
-  font-size: 18px;
+  background: #fff7f6;
+  font-size: 15px;
   font-weight: 800;
+}
+
+.result-line.highlight text:last-child {
+  color: #f75a50;
 }
 
 .tip,

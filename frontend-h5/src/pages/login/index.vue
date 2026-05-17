@@ -13,14 +13,32 @@ const codePhone = ref('')
 const loading = ref(false)
 const codeLoading = ref(false)
 const countdown = ref(0)
+const codeAttempted = ref(false)
+const loginAttempted = ref(false)
 let countdownTimer: ReturnType<typeof setInterval> | null = null
 
 const normalizedPhone = computed(() => phone.value.trim())
 const normalizedCode = computed(() => code.value.trim())
 const phoneReady = computed(() => isPhone(normalizedPhone.value))
 const codeReady = computed(() => /^\d{6}$/.test(normalizedCode.value))
-const phoneHint = computed(() => (normalizedPhone.value && !phoneReady.value ? '请输入正确的手机号' : ''))
-const codeHint = computed(() => (normalizedCode.value && !codeReady.value ? '请输入6位验证码' : ''))
+const phoneHint = computed(() => {
+  if (!normalizedPhone.value && (codeAttempted.value || loginAttempted.value)) {
+    return '请输入手机号'
+  }
+  if (normalizedPhone.value && !phoneReady.value) {
+    return '请输入正确的手机号'
+  }
+  return ''
+})
+const codeHint = computed(() => {
+  if (!normalizedCode.value && loginAttempted.value) {
+    return '请输入验证码'
+  }
+  if (normalizedCode.value && !codeReady.value) {
+    return '请输入6位验证码'
+  }
+  return ''
+})
 
 const codeButtonText = computed(() => {
   if (codeLoading.value) {
@@ -32,8 +50,10 @@ const codeButtonText = computed(() => {
   return '获取验证码'
 })
 
-const codeButtonDisabled = computed(() => codeLoading.value || countdown.value > 0 || !phoneReady.value)
-const loginButtonDisabled = computed(() => loading.value || !phoneReady.value || !codeReady.value)
+const codeButtonDisabled = computed(() => codeLoading.value || countdown.value > 0)
+const codeButtonBlocked = computed(() => codeButtonDisabled.value || !phoneReady.value)
+const loginButtonDisabled = computed(() => loading.value)
+const loginButtonBlocked = computed(() => loginButtonDisabled.value || !phoneReady.value || !codeReady.value)
 
 onShow(async () => {
   const token = getCustomerToken()
@@ -86,6 +106,7 @@ function startCountdown() {
 }
 
 async function sendCode() {
+  codeAttempted.value = true
   if (codeButtonDisabled.value) {
     return
   }
@@ -110,6 +131,7 @@ async function sendCode() {
 }
 
 async function login() {
+  loginAttempted.value = true
   if (loading.value) {
     return
   }
@@ -145,19 +167,19 @@ async function login() {
     <view class="login-card">
       <view class="card-title">手机号登录</view>
       <view class="field-label">联系手机</view>
-      <input v-model="phone" class="field" type="number" maxlength="11" placeholder="请输入手机号" />
+      <input v-model="phone" class="field" type="number" maxlength="11" placeholder="请输入手机号" @confirm="sendCode" />
       <view v-if="phoneHint" class="field-hint">{{ phoneHint }}</view>
       <view class="field-label">验证码</view>
       <view class="code-row">
         <input v-model="code" class="field code-field" type="number" maxlength="6" placeholder="请输入验证码" @confirm="login" />
-        <button class="code-button" :class="{ disabled: codeButtonDisabled }" :disabled="codeButtonDisabled" @click="sendCode">
+        <button class="code-button" :class="{ disabled: codeButtonBlocked }" :disabled="codeButtonDisabled" @click="sendCode">
           {{ codeButtonText }}
         </button>
       </view>
       <view v-if="codeHint" class="field-hint">{{ codeHint }}</view>
       <view v-if="mockCode" class="mock-code">本次验证码：{{ mockCode }}</view>
       <view class="login-tip">演示版验证码会直接显示在页面上，方便本地试用。</view>
-      <button class="login-button" :class="{ disabled: loginButtonDisabled }" :disabled="loginButtonDisabled" @click="login">
+      <button class="login-button" :class="{ disabled: loginButtonBlocked }" :disabled="loginButtonDisabled" @click="login">
         {{ loading ? '登录中...' : '登录' }}
       </button>
     </view>

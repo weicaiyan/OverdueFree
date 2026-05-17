@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { onPullDownRefresh, onShow } from '@dcloudio/uni-app'
 import AssetImage from '../../components/AssetImage.vue'
 import BottomTabs from '../../components/BottomTabs.vue'
 import PageState from '../../components/PageState.vue'
@@ -36,7 +36,14 @@ onShow(async () => {
   if (!(await requireLogin())) {
     return
   }
-  loadHome()
+  if (!loaded.value && !loading.value) {
+    loadHome()
+  }
+})
+
+onPullDownRefresh(async () => {
+  await loadHome()
+  uni.stopPullDownRefresh()
 })
 
 async function loadHome() {
@@ -49,7 +56,11 @@ async function loadHome() {
     homeData.value = await api.home()
     loaded.value = true
   } catch (error) {
-    errorText.value = '首页加载失败，请检查后端服务或稍后重试'
+    if (loaded.value) {
+      uni.showToast({ title: '刷新首页失败', icon: 'none' })
+    } else {
+      errorText.value = '首页加载失败，请检查后端服务或稍后重试'
+    }
   } finally {
     loading.value = false
   }
@@ -61,6 +72,13 @@ function openVideo() {
     uni.showToast({ title: '视频待配置', icon: 'none' })
     return
   }
+  api.event({
+    eventType: 'VIEW_HOME_VIDEO',
+    sourcePage: 'HOME',
+    refType: 'ASSET',
+    refId: video.id || null,
+    metadata: { assetKey: video.assetKey || 'HOME_VIDEO' }
+  }).catch(() => undefined)
   videoError.value = false
   videoVisible.value = true
 }
@@ -77,6 +95,15 @@ function go(url: string, entry: string) {
   trackHomeEntry(entry)
   safeNavigateTo(url)
 }
+
+function openHomeQr() {
+  api.event({
+    eventType: 'HOME_CTA',
+    sourcePage: 'HOME',
+    metadata: { entry: 'FIXED_CTA' }
+  }).catch(() => undefined)
+  qrVisible.value = true
+}
 </script>
 
 <template>
@@ -87,6 +114,7 @@ function go(url: string, entry: string) {
       v-if="loading && !loaded"
       title="正在加载首页"
       subtitle="请稍候"
+      variant="loading"
       compact
     />
     <PageState
@@ -145,7 +173,7 @@ function go(url: string, entry: string) {
         </view>
       </view>
 
-      <button class="fixed-cta" @click="qrVisible = true">领取债务减免延期方案</button>
+      <button class="fixed-cta" @click="openHomeQr">领取债务减免延期方案</button>
     </template>
     <view v-if="videoVisible" class="video-mask" @click="videoVisible = false">
       <view class="video-panel" @click.stop>

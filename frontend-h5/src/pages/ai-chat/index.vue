@@ -35,9 +35,11 @@ function defaultForm() {
 const step = ref(0)
 const submitting = ref(false)
 const submitted = ref(false)
+const nextAttempted = ref(false)
 const qrVisible = ref(false)
 const homeData = ref<HomeData>({ assets: {}, serviceSteps: [] })
 const form = ref(defaultForm())
+const draftSavingPaused = ref(false)
 
 const debtTypes = [
   { label: '网贷', value: 'ONLINE_LOAN' },
@@ -67,17 +69,24 @@ const currentStepMessage = computed(() => {
 })
 
 const nextDisabled = computed(() => !!currentStepMessage.value)
-const submitDisabled = computed(() => submitting.value || !!validateBeforeSubmit())
+const showStepHint = computed(() => nextAttempted.value && !!currentStepMessage.value)
+const submitDisabled = computed(() => submitting.value)
+const submitBlocked = computed(() => submitting.value || !!validateBeforeSubmit())
 const submitButtonText = computed(() => {
   if (submitting.value) {
     return '提交中...'
   }
-  return submitDisabled.value ? '请先完善信息' : '提交'
+  return submitBlocked.value ? '请先完善信息' : '提交'
 })
+const descriptionLength = computed(() => form.value.debtDescription.length)
 
 watch(
   () => ({ step: step.value, form: form.value }),
   (draft) => {
+    if (draftSavingPaused.value) {
+      draftSavingPaused.value = false
+      return
+    }
     if (!submitted.value) {
       setStorageObject(AI_CHAT_DRAFT_KEY, draft)
     }
@@ -93,7 +102,7 @@ onShow(async () => {
   try {
     homeData.value = await api.home()
   } catch (error) {
-    uni.showToast({ title: '顾问二维码加载失败', icon: 'none' })
+    // 二维码素材失败不影响留资流程，弹窗会展示占位提示。
   }
 })
 
@@ -113,6 +122,7 @@ function restoreDraft() {
 }
 
 function next() {
+  nextAttempted.value = true
   if (nextDisabled.value) {
     uni.showToast({ title: currentStepMessage.value, icon: 'none' })
     return
@@ -140,6 +150,7 @@ function next() {
   }
   if (step.value < 4) {
     step.value += 1
+    nextAttempted.value = false
   }
 }
 
@@ -150,6 +161,7 @@ function validateBeforeSubmit() {
 function prev() {
   if (step.value > 0) {
     step.value -= 1
+    nextAttempted.value = false
   }
 }
 
@@ -189,8 +201,10 @@ async function submit() {
 }
 
 function resetForm() {
+  draftSavingPaused.value = true
   step.value = 0
   submitted.value = false
+  nextAttempted.value = false
   qrVisible.value = false
   form.value = {
     ...defaultForm()
@@ -228,6 +242,7 @@ function resetForm() {
       <input v-if="step === 0" v-model="form.surname" class="field" confirm-type="next" maxlength="50" placeholder="例如：张先生" @confirm="next" />
       <input v-if="step === 1" v-model="form.region" class="field" confirm-type="next" maxlength="100" placeholder="例如：重庆" @confirm="next" />
       <input v-if="step === 2" v-model="form.debtAmount" class="field" type="digit" confirm-type="next" maxlength="13" placeholder="例如：50000" @confirm="next" />
+      <view v-if="showStepHint" class="field-hint">{{ currentStepMessage }}</view>
       <view v-if="step === 3" class="chips">
         <button
           v-for="item in debtTypes"
@@ -239,11 +254,14 @@ function resetForm() {
           {{ item.label }}
         </button>
       </view>
-      <textarea v-if="step === 4" v-model="form.debtDescription" class="textarea" maxlength="2000" placeholder="可简单说明逾期平台和当前情况" />
+      <template v-if="step === 4">
+        <textarea v-model="form.debtDescription" class="textarea" maxlength="2000" placeholder="可简单说明逾期平台和当前情况" />
+        <view class="textarea-meta">{{ descriptionLength }}/2000</view>
+      </template>
       <view class="step-actions">
         <button v-if="step > 0" class="secondary-button" @click="prev">上一步</button>
-        <button v-if="step < 4" class="send-button" :class="{ compact: step > 0, disabled: nextDisabled }" :disabled="nextDisabled" @click="next">下一步</button>
-        <button v-else class="send-button" :class="{ compact: step > 0, disabled: submitDisabled }" :disabled="submitDisabled" @click="submit">
+        <button v-if="step < 4" class="send-button" :class="{ compact: step > 0, disabled: nextDisabled }" @click="next">下一步</button>
+        <button v-else class="send-button" :class="{ compact: step > 0, disabled: submitBlocked }" :disabled="submitDisabled" @click="submit">
           {{ submitButtonText }}
         </button>
       </view>
@@ -355,8 +373,23 @@ function resetForm() {
   background: #ffffff;
 }
 
+.field-hint {
+  margin-top: 8px;
+  color: #f75a50;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 .textarea {
   height: 92px;
+}
+
+.textarea-meta {
+  margin-top: 6px;
+  text-align: right;
+  color: #9a9a9a;
+  font-size: 12px;
+  line-height: 1.2;
 }
 
 .chips {

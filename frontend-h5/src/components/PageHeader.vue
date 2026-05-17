@@ -1,18 +1,23 @@
 <script setup lang="ts">
 import { safeNavigateBack } from '../services/navigation'
 
-defineProps<{
+const props = withDefaults(defineProps<{
   title: string
   back?: boolean
-}>()
+  fallbackUrl?: string
+  surface?: 'transparent' | 'light'
+}>(), {
+  fallbackUrl: '/pages/home/index',
+  surface: 'transparent'
+})
 
 function goBack() {
-  safeNavigateBack()
+  safeNavigateBack(props.fallbackUrl)
 }
 </script>
 
 <template>
-  <view class="page-header">
+  <view class="page-header" :class="`surface-${props.surface}`">
     <button v-if="back" class="back-button" @click="goBack">‹</button>
     <view class="header-title">{{ title }}</view>
     <view class="header-spacer" />
@@ -28,6 +33,11 @@ function goBack() {
   height: calc(64px + env(safe-area-inset-top));
   padding: calc(28px + env(safe-area-inset-top)) 18px 0;
   box-sizing: border-box;
+}
+
+.surface-light {
+  background: #f6f6f6;
+  border-bottom: 1px solid #e8e8e8;
 }
 
 .header-title {

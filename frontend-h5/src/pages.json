@@ -11,14 +11,16 @@
       "path": "pages/home/index",
       "style": {
         "navigationBarTitleText": "逾期上岸",
-        "navigationStyle": "custom"
+        "navigationStyle": "custom",
+        "enablePullDownRefresh": true
       }
     },
     {
       "path": "pages/cases/index",
       "style": {
         "navigationBarTitleText": "成功案例",
-        "navigationStyle": "custom"
+        "navigationStyle": "custom",
+        "enablePullDownRefresh": true
       }
     },
     {
@@ -32,7 +34,8 @@
       "path": "pages/articles/index",
       "style": {
         "navigationBarTitleText": "教程资讯",
-        "navigationStyle": "custom"
+        "navigationStyle": "custom",
+        "enablePullDownRefresh": true
       }
     },
     {
