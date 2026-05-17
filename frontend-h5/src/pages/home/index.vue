@@ -56,7 +56,11 @@ async function loadHome() {
     homeData.value = await api.home()
     loaded.value = true
   } catch (error) {
-    errorText.value = '首页加载失败，请检查后端服务或稍后重试'
+    if (loaded.value) {
+      uni.showToast({ title: '刷新首页失败', icon: 'none' })
+    } else {
+      errorText.value = '首页加载失败，请检查后端服务或稍后重试'
+    }
   } finally {
     loading.value = false
   }
