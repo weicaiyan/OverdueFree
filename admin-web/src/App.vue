@@ -275,6 +275,7 @@
               <template #default="{ row }">
                 <strong>{{ row.displayName }}</strong>
                 <span class="muted block">{{ row.maskedPhone || '-' }}</span>
+                <span class="muted block">{{ row.avatarUrl ? '头像已配置' : '未配头像' }}</span>
               </template>
             </el-table-column>
             <el-table-column label="逾期信息" min-width="240">
@@ -560,6 +561,9 @@
       </el-form-item>
       <el-form-item label="脱敏手机号">
         <el-input v-model="caseForm.maskedPhone" placeholder="例如 138****6357" />
+      </el-form-item>
+      <el-form-item label="头像地址">
+        <el-input v-model="caseForm.avatarUrl" placeholder="可填上传后的图片地址" />
       </el-form-item>
       <el-form-item label="逾期平台">
         <el-input v-model="caseForm.overduePlatforms" maxlength="500" />
@@ -1169,17 +1173,18 @@ function openArticleEdit(row: ArticleItem) {
 }
 
 async function saveArticle() {
-  if (!articleForm.title) {
+  const title = trimText(articleForm.title)
+  if (!title) {
     ElMessage.warning('请填写资讯标题')
     return
   }
   articleSaving.value = true
   try {
     const payload = {
-      title: articleForm.title,
-      coverUrl: articleForm.coverUrl,
-      summary: articleForm.summary,
-      contentText: articleForm.contentText,
+      title,
+      coverUrl: trimText(articleForm.coverUrl),
+      summary: trimText(articleForm.summary),
+      contentText: trimText(articleForm.contentText),
       sortOrder: articleForm.sortOrder || 0
     }
     if (articleForm.id) {
@@ -1227,6 +1232,7 @@ function openCaseCreate() {
     id: undefined,
     displayName: '',
     maskedPhone: '',
+    avatarUrl: '',
     overduePlatforms: '',
     overdueAmount: 0,
     handlingPlan: '',
@@ -1242,19 +1248,21 @@ function openCaseEdit(row: SuccessCaseItem) {
 }
 
 async function saveCase() {
-  if (!caseForm.displayName) {
+  const displayName = trimText(caseForm.displayName)
+  if (!displayName) {
     ElMessage.warning('请填写展示姓名')
     return
   }
   caseSaving.value = true
   try {
     const payload = {
-      displayName: caseForm.displayName,
-      maskedPhone: caseForm.maskedPhone,
-      overduePlatforms: caseForm.overduePlatforms,
+      displayName,
+      maskedPhone: trimText(caseForm.maskedPhone),
+      avatarUrl: trimText(caseForm.avatarUrl),
+      overduePlatforms: trimText(caseForm.overduePlatforms),
       overdueAmount: caseForm.overdueAmount || 0,
-      handlingPlan: caseForm.handlingPlan,
-      detailText: caseForm.detailText,
+      handlingPlan: trimText(caseForm.handlingPlan),
+      detailText: trimText(caseForm.detailText),
       sortOrder: caseForm.sortOrder || 0
     }
     if (caseForm.id) {
@@ -1436,6 +1444,10 @@ function resetLogQuery() {
   logQuery.endTime = ''
   logQuery.page = 1
   loadLogs()
+}
+
+function trimText(value?: string) {
+  return (value || '').trim()
 }
 
 async function confirmAndRun(message: string, action: () => Promise<unknown>, refresh: () => Promise<void>) {
