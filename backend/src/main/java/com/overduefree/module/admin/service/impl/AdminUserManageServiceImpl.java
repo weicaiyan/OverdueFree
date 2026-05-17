@@ -51,6 +51,7 @@ public class AdminUserManageServiceImpl implements AdminUserManageService {
     @Transactional(rollbackFor = Exception.class)
     public AdminUserResult createUser(AdminUserCreateRequest request) {
         AdminPrincipal principal = ensureBoss();
+        assertOrdinaryAdminRole(request.getRole());
         assertUsernameAvailable(request.getUsername());
 
         AdminUser adminUser = new AdminUser();
@@ -81,9 +82,9 @@ public class AdminUserManageServiceImpl implements AdminUserManageService {
         if (principal.getAdminId().equals(id) && AdminUser.STATUS_DISABLED.equals(request.getStatus())) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "不能停用当前登录账号");
         }
+        assertRoleUnchanged(adminUser, request.getRole());
 
         adminUser.setDisplayName(request.getDisplayName());
-        adminUser.setRole(request.getRole());
         adminUser.setStatus(request.getStatus());
         adminUser.setUpdatedAt(LocalDateTime.now());
         adminUserMapper.updateById(adminUser);
@@ -126,6 +127,18 @@ public class AdminUserManageServiceImpl implements AdminUserManageService {
             throw new BusinessException(ErrorCode.FORBIDDEN, "只有老板账号可以管理管理员");
         }
         return principal;
+    }
+
+    private void assertOrdinaryAdminRole(String role) {
+        if (!AdminUser.ROLE_ADMIN.equals(role)) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "第一版只能创建普通管理员");
+        }
+    }
+
+    private void assertRoleUnchanged(AdminUser adminUser, String requestedRole) {
+        if (!adminUser.getRole().equals(requestedRole)) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "第一版不支持修改管理员角色");
+        }
     }
 
     private void assertUsernameAvailable(String username) {

@@ -330,7 +330,9 @@
               <el-table-column label="显示名" min-width="160" prop="displayName" />
               <el-table-column label="角色" width="110">
                 <template #default="{ row }">
-                  <el-tag :type="row.role === 'BOSS' ? 'danger' : 'info'" effect="light">{{ row.role }}</el-tag>
+                  <el-tag :type="row.role === 'BOSS' ? 'danger' : 'info'" effect="light">
+                    {{ displayAdminRole(row.role) }}
+                  </el-tag>
                 </template>
               </el-table-column>
               <el-table-column label="状态" width="110">
@@ -619,10 +621,14 @@
         <el-input v-model="adminForm.displayName" />
       </el-form-item>
       <el-form-item label="角色">
-        <el-select v-model="adminForm.role">
-          <el-option label="普通管理员" value="ADMIN" />
-          <el-option label="BOSS" value="BOSS" />
-        </el-select>
+        <div class="readonly-role">
+          <el-tag :type="adminForm.role === 'BOSS' ? 'danger' : 'info'" effect="light">
+            {{ displayAdminRole(adminForm.role) }}
+          </el-tag>
+          <span class="muted role-hint">
+            {{ adminForm.id ? '第一版不支持修改管理员角色' : '第一版新增账号固定为普通管理员' }}
+          </span>
+        </div>
       </el-form-item>
       <el-form-item v-if="adminForm.id" label="状态">
         <el-select v-model="adminForm.status">
@@ -1413,7 +1419,7 @@ async function saveAdminUser() {
         username: adminForm.username,
         password: adminForm.password,
         displayName: adminForm.displayName,
-        role: adminForm.role
+        role: 'ADMIN'
       })
     }
     adminDialogVisible.value = false
@@ -1608,6 +1614,10 @@ function displaySourcePage(sourcePage?: string) {
 
 function displayStatus(status?: string) {
   return status === 'PUBLISHED' ? '已发布' : '草稿'
+}
+
+function displayAdminRole(role?: string) {
+  return role === 'BOSS' ? 'BOSS' : '普通管理员'
 }
 
 function displayOperationAction(action?: string) {
@@ -1927,6 +1937,16 @@ function getErrorMessage(error: unknown) {
 
 .url-upload-row .el-button {
   min-width: 88px;
+}
+
+.readonly-role {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.role-hint {
+  font-size: 13px;
 }
 
 .muted {
