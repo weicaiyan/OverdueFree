@@ -61,6 +61,13 @@ function openVideo() {
     uni.showToast({ title: '视频待配置', icon: 'none' })
     return
   }
+  api.event({
+    eventType: 'VIEW_HOME_VIDEO',
+    sourcePage: 'HOME',
+    refType: 'ASSET',
+    refId: video.id || null,
+    metadata: { assetKey: video.assetKey || 'HOME_VIDEO' }
+  }).catch(() => undefined)
   videoError.value = false
   videoVisible.value = true
 }
