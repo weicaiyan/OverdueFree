@@ -93,7 +93,7 @@ onShow(async () => {
   try {
     homeData.value = await api.home()
   } catch (error) {
-    uni.showToast({ title: '顾问二维码加载失败', icon: 'none' })
+    // 二维码素材失败不影响留资流程，弹窗会展示占位提示。
   }
 })
 

@@ -8,7 +8,7 @@ import { api } from '../../services/api'
 import { logout, requireLogin } from '../../services/auth'
 import type { HomeData } from '../../types'
 
-type InfoType = 'about' | 'terms' | 'privacy' | 'contact'
+type InfoType = 'about' | 'terms' | 'privacy'
 
 const homeData = ref<HomeData>({ assets: {}, serviceSteps: [] })
 const qrVisible = ref(false)
@@ -31,10 +31,6 @@ const infoMap: Record<InfoType, { title: string; content: string }> = {
     title: '隐私协议',
     content:
       '本演示系统会记录手机号、提交的债务初评信息以及查看顾问二维码等行为，用于本地演示线索管理流程。正式上线前需补充完整隐私政策，并明确数据收集、使用、保存和删除规则。'
-  },
-  contact: {
-    title: '联系我们',
-    content: '演示版暂未配置正式联系方式。可点击底部按钮查看顾问二维码占位信息。'
   }
 }
 
