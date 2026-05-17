@@ -1,6 +1,6 @@
 import { api } from './api'
 import { goLoginWithRedirect } from './navigation'
-import { clearCustomerToken, clearLoginRedirect, getCustomerToken, setCustomerToken } from './storage'
+import { clearCustomerDrafts, clearCustomerToken, clearLoginRedirect, getCustomerToken, setCustomerToken } from './storage'
 
 export function isPhone(phone: string) {
   return /^1[3-9]\d{9}$/.test(phone)
@@ -38,6 +38,7 @@ export async function logout() {
     // 退出登录以本地清理为准，后端失败时仍回到登录页。
   }
   clearCustomerToken()
+  clearCustomerDrafts()
   clearLoginRedirect()
   uni.reLaunch({ url: '/pages/login/index' })
 }
