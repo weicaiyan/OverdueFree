@@ -1,19 +1,23 @@
 <script setup lang="ts">
-defineProps<{
+import { computed } from 'vue'
+
+const emit = defineEmits<{
+  (event: 'action'): void
+}>()
+
+const props = defineProps<{
   title: string
   subtitle?: string
   actionText?: string
   compact?: boolean
 }>()
 
-const emit = defineEmits<{
-  (event: 'action'): void
-}>()
+const loading = computed(() => props.title.startsWith('正在'))
 </script>
 
 <template>
   <view class="page-state" :class="{ compact }">
-    <view class="state-mark">!</view>
+    <view class="state-mark" :class="{ loading }">{{ loading ? '' : '!' }}</view>
     <view class="state-title">{{ title }}</view>
     <view v-if="subtitle" class="state-subtitle">{{ subtitle }}</view>
     <button v-if="actionText" class="state-button" @click="emit('action')">{{ actionText }}</button>
@@ -33,6 +37,7 @@ const emit = defineEmits<{
 .state-mark {
   width: 48px;
   height: 48px;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -42,6 +47,20 @@ const emit = defineEmits<{
   background: #fff0ee;
   font-size: 24px;
   font-weight: 900;
+}
+
+.state-mark.loading {
+  border: 4px solid #ffe0dc;
+  border-top-color: #f75a50;
+  color: transparent;
+  background: #ffffff;
+  animation: state-spin 0.9s linear infinite;
+}
+
+@keyframes state-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .state-title {
