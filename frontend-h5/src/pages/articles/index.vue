@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { onReachBottom, onShow } from '@dcloudio/uni-app'
+import { onPullDownRefresh, onReachBottom, onShow } from '@dcloudio/uni-app'
 import BottomTabs from '../../components/BottomTabs.vue'
 import PageHeader from '../../components/PageHeader.vue'
 import PageState from '../../components/PageState.vue'
@@ -16,6 +16,7 @@ const homeData = ref<HomeData>({ assets: {}, serviceSteps: [] })
 const qrVisible = ref(false)
 const loading = ref(false)
 const loadingMore = ref(false)
+const loaded = ref(false)
 const errorText = ref('')
 const page = ref(1)
 const pageSize = 10
@@ -28,11 +29,18 @@ onShow(async () => {
   if (!(await requireLogin())) {
     return
   }
-  loadArticles(true)
+  if (!loaded.value && !loading.value) {
+    loadArticles(true)
+  }
 })
 
 onReachBottom(() => {
   loadArticles(false)
+})
+
+onPullDownRefresh(async () => {
+  await loadArticles(true)
+  uni.stopPullDownRefresh()
 })
 
 async function loadArticles(reset = true) {
@@ -57,6 +65,7 @@ async function loadArticles(reset = true) {
     articles.value = reset ? articlePage.list : articles.value.concat(articlePage.list)
     total.value = articlePage.total
     page.value = articlePage.page
+    loaded.value = true
     if (reset) {
       api.home()
         .then((home) => {
@@ -66,7 +75,11 @@ async function loadArticles(reset = true) {
     }
   } catch (error) {
     if (reset) {
-      errorText.value = '资讯加载失败，请检查后端服务或稍后重试'
+      if (!articles.value.length) {
+        errorText.value = '资讯加载失败，请检查后端服务或稍后重试'
+      } else {
+        uni.showToast({ title: '刷新资讯失败', icon: 'none' })
+      }
     } else {
       uni.showToast({ title: '加载更多失败', icon: 'none' })
     }

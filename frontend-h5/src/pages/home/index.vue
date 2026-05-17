@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { onPullDownRefresh, onShow } from '@dcloudio/uni-app'
 import AssetImage from '../../components/AssetImage.vue'
 import BottomTabs from '../../components/BottomTabs.vue'
 import PageState from '../../components/PageState.vue'
@@ -36,7 +36,14 @@ onShow(async () => {
   if (!(await requireLogin())) {
     return
   }
-  loadHome()
+  if (!loaded.value && !loading.value) {
+    loadHome()
+  }
+})
+
+onPullDownRefresh(async () => {
+  await loadHome()
+  uni.stopPullDownRefresh()
 })
 
 async function loadHome() {

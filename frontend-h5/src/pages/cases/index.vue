@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { onReachBottom, onShow } from '@dcloudio/uni-app'
+import { onPullDownRefresh, onReachBottom, onShow } from '@dcloudio/uni-app'
 import BottomTabs from '../../components/BottomTabs.vue'
 import PageHeader from '../../components/PageHeader.vue'
 import PageState from '../../components/PageState.vue'
@@ -16,6 +16,7 @@ const homeData = ref<HomeData>({ assets: {}, serviceSteps: [] })
 const qrVisible = ref(false)
 const loading = ref(false)
 const loadingMore = ref(false)
+const loaded = ref(false)
 const errorText = ref('')
 const page = ref(1)
 const pageSize = 10
@@ -28,11 +29,18 @@ onShow(async () => {
   if (!(await requireLogin())) {
     return
   }
-  loadData(true)
+  if (!loaded.value && !loading.value) {
+    loadData(true)
+  }
 })
 
 onReachBottom(() => {
   loadData(false)
+})
+
+onPullDownRefresh(async () => {
+  await loadData(true)
+  uni.stopPullDownRefresh()
 })
 
 async function loadData(reset = true) {
@@ -55,6 +63,7 @@ async function loadData(reset = true) {
       cases.value = casePage.list
       total.value = casePage.total
       page.value = casePage.page
+      loaded.value = true
       failedAvatarIds.value = []
       api.home()
         .then((home) => {
@@ -69,7 +78,11 @@ async function loadData(reset = true) {
     }
   } catch (error) {
     if (reset) {
-      errorText.value = '案例加载失败，请检查后端服务或稍后重试'
+      if (!cases.value.length) {
+        errorText.value = '案例加载失败，请检查后端服务或稍后重试'
+      } else {
+        uni.showToast({ title: '刷新案例失败', icon: 'none' })
+      }
     } else {
       uni.showToast({ title: '加载更多失败', icon: 'none' })
     }
