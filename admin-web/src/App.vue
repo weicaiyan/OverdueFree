@@ -1386,6 +1386,7 @@ function displaySource(source?: string) {
   const map: Record<string, string> = {
     AI_CHAT: 'AI聊天',
     PLAN_ASSESSMENT: '规划表单',
+    DEBT_PLAN: '规划表单',
     HOME_CTA: '首页按钮'
   }
   return source ? map[source] || source : '-'
