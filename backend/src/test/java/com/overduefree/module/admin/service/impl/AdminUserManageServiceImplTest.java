@@ -87,6 +87,47 @@ class AdminUserManageServiceImplTest {
     }
 
     @Test
+    void shouldRejectCreatingBossAccount() {
+        CurrentAdminContext.set(new AdminPrincipal(1L, 10L, "boss", "Boss", AdminUser.ROLE_BOSS));
+
+        AdminUserCreateRequest request = new AdminUserCreateRequest();
+        request.setUsername("second_boss");
+        request.setPassword("demo123456");
+        request.setDisplayName("Second Boss");
+        request.setRole(AdminUser.ROLE_BOSS);
+
+        assertThatThrownBy(() -> service.createUser(request))
+            .isInstanceOf(BusinessException.class)
+            .hasMessageContaining("第一版只能创建普通管理员");
+
+        verify(adminUserMapper, never()).selectCount(any());
+        verify(adminUserMapper, never()).insert(any());
+    }
+
+    @Test
+    void shouldRejectChangingAdminRole() {
+        CurrentAdminContext.set(new AdminPrincipal(1L, 10L, "boss", "Boss", AdminUser.ROLE_BOSS));
+        AdminUser adminUser = new AdminUser();
+        adminUser.setId(3L);
+        adminUser.setUsername("demo_admin");
+        adminUser.setDisplayName("Demo Admin");
+        adminUser.setRole(AdminUser.ROLE_ADMIN);
+        adminUser.setStatus(AdminUser.STATUS_ACTIVE);
+        when(adminUserMapper.selectById(3L)).thenReturn(adminUser);
+
+        AdminUserUpdateRequest request = new AdminUserUpdateRequest();
+        request.setDisplayName("Demo Admin");
+        request.setRole(AdminUser.ROLE_BOSS);
+        request.setStatus(AdminUser.STATUS_ACTIVE);
+
+        assertThatThrownBy(() -> service.updateUser(3L, request))
+            .isInstanceOf(BusinessException.class)
+            .hasMessageContaining("第一版不支持修改管理员角色");
+
+        verify(adminUserMapper, never()).updateById(any());
+    }
+
+    @Test
     void shouldRejectDisablingCurrentBossAccount() {
         CurrentAdminContext.set(new AdminPrincipal(1L, 10L, "boss", "Boss", AdminUser.ROLE_BOSS));
         AdminUser boss = new AdminUser();
