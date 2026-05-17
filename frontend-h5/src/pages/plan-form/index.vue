@@ -43,6 +43,7 @@ const homeData = ref<HomeData>({ assets: {}, serviceSteps: [] })
 const qrVisible = ref(false)
 const submitting = ref(false)
 const submitted = ref(false)
+const submitAttempted = ref(false)
 const form = ref(defaultForm())
 
 const groups = [
@@ -77,7 +78,8 @@ const requiredProgressStyle = computed(() => ({
 }))
 
 const formReady = computed(() => requiredFilledCount.value === 4)
-const submitDisabled = computed(() => submitting.value || (!submitted.value && !formReady.value))
+const submitDisabled = computed(() => submitting.value)
+const submitBlocked = computed(() => submitting.value || (!submitted.value && !formReady.value))
 
 const submitText = computed(() => {
   if (submitting.value) {
@@ -88,6 +90,13 @@ const submitText = computed(() => {
   }
   return formReady.value ? '获取规划方案' : '请先完善必填信息'
 })
+
+const surnameMessage = computed(() => validateSurname(form.value.surname))
+const regionMessage = computed(() => validateRegion(form.value.region))
+const debtAmountMessage = computed(() => validateDebtAmount(form.value.debtAmount))
+const showSurnameHint = computed(() => submitAttempted.value && !!surnameMessage.value)
+const showRegionHint = computed(() => submitAttempted.value && !!regionMessage.value)
+const showDebtAmountHint = computed(() => submitAttempted.value && !!debtAmountMessage.value)
 
 watch(
   form,
@@ -137,6 +146,7 @@ async function submit() {
     qrVisible.value = true
     return
   }
+  submitAttempted.value = true
   if (submitting.value) {
     return
   }
@@ -178,6 +188,7 @@ async function submit() {
 
 function resetForm() {
   submitted.value = false
+  submitAttempted.value = false
   qrVisible.value = false
   form.value = defaultForm()
   removeStorageItem(PLAN_FORM_DRAFT_KEY)
@@ -200,10 +211,13 @@ function resetForm() {
       </view>
       <view class="field-title">怎么称呼您 *</view>
       <input v-model="form.surname" class="field" maxlength="50" placeholder="例如：张先生" />
+      <view v-if="showSurnameHint" class="field-hint">{{ surnameMessage }}</view>
       <view class="field-title">所在地区 *</view>
       <input v-model="form.region" class="field" maxlength="100" placeholder="例如：重庆" />
+      <view v-if="showRegionHint" class="field-hint">{{ regionMessage }}</view>
       <view class="field-title">债务金额 *</view>
       <input v-model="form.debtAmount" class="field" type="digit" maxlength="13" placeholder="例如：50000" />
+      <view v-if="showDebtAmountHint" class="field-hint">{{ debtAmountMessage }}</view>
 
       <view class="field-title">债务类型 *</view>
       <view class="chips">
@@ -240,7 +254,7 @@ function resetForm() {
       </view>
       <button v-if="submitted" class="reset-button" @click="resetForm">重新填写</button>
     </view>
-    <button class="fixed-cta" :class="{ submitted, disabled: submitDisabled }" :disabled="submitDisabled" @click="submit">{{ submitText }}</button>
+    <button class="fixed-cta" :class="{ submitted, disabled: submitBlocked }" :disabled="submitDisabled" @click="submit">{{ submitText }}</button>
     <WechatQrModal :visible="qrVisible" :asset="homeData.assets.wechatQr" source-page="PLAN_FORM" @close="qrVisible = false" />
   </view>
 </template>
@@ -300,6 +314,13 @@ function resetForm() {
   margin: 18px 0 10px;
   font-size: 18px;
   font-weight: 800;
+}
+
+.field-hint {
+  margin-top: 8px;
+  color: #f75a50;
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 .field,
