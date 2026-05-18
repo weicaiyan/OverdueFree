@@ -27,7 +27,9 @@ onShow(async () => {
   if (!(await requireLogin()) || !id.value) {
     return
   }
-  loadDetail()
+  if (!detail.value && !loading.value) {
+    loadDetail()
+  }
 })
 
 function backToList() {
