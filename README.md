@@ -56,6 +56,8 @@ Windows 本地演示可以直接双击以下脚本：
 
 `frontend-h5/start-h5.bat` 和 `admin-web/start-admin-web.bat` 只负责启动开发服务，不提前检查或释放端口占用；如果端口已被占用，请按启动窗口里的提示单独处理。
 
+完整演示路径见 [本地演示手册](docs/LOCAL-DEMO-RUNBOOK.md)。
+
 ### 1. 启动 MySQL
 
 ```bash
