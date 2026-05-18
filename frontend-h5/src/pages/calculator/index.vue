@@ -119,7 +119,9 @@ const resultRows = computed(() => {
 })
 
 onShow(async () => {
-  await requireLogin()
+  if (!(await requireLogin())) {
+    return
+  }
 })
 
 async function calculate() {
