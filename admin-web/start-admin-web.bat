@@ -6,9 +6,6 @@ set "PROJECT_DIR=%~dp0"
 set "PORT=5174"
 set "START_COMMAND=npm run dev"
 
-echo [%PROJECT_NAME%] Restarting port %PORT% if it is already in use...
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$port=%PORT%; Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique | Where-Object { $_ -gt 0 } | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }"
-
 cd /d "%PROJECT_DIR%"
 
 if not exist "node_modules" (
@@ -22,6 +19,7 @@ if not exist "node_modules" (
 )
 
 echo [%PROJECT_NAME%] Starting at http://localhost:%PORT%
+echo [%PROJECT_NAME%] This script does not check or release occupied ports.
 start "%PROJECT_NAME%" cmd /k "cd /d ""%PROJECT_DIR%"" && %START_COMMAND%"
 timeout /t 2 >nul
 exit /b 0
