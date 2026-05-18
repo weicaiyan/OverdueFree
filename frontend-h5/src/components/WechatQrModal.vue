@@ -13,13 +13,52 @@ const emit = defineEmits<{
   (event: 'close'): void
 }>()
 
+const internalAsset = ref<AssetResource | null>(null)
+const assetLoading = ref(false)
 const imageFailed = ref(false)
+const effectiveAsset = computed(() => {
+  if (props.asset?.fileUrl) {
+    return props.asset
+  }
+  return internalAsset.value
+})
 const placeholderText = computed(() => {
-  if (props.asset?.fileUrl && imageFailed.value) {
+  if (assetLoading.value) {
+    return '正在加载顾问二维码'
+  }
+  if (effectiveAsset.value?.fileUrl && imageFailed.value) {
     return '二维码暂时无法加载'
   }
   return '顾问二维码待配置'
 })
+
+async function ensureWechatAsset() {
+  if (props.asset?.fileUrl || internalAsset.value?.fileUrl || assetLoading.value) {
+    return
+  }
+  assetLoading.value = true
+  try {
+    const home = await api.home()
+    internalAsset.value = home.assets.wechatQr || null
+  } catch (error) {
+    internalAsset.value = null
+  } finally {
+    assetLoading.value = false
+  }
+}
+
+async function handleOpen() {
+  imageFailed.value = false
+  await ensureWechatAsset()
+  const visibleAsset = effectiveAsset.value
+  api.event({
+    eventType: 'VIEW_WECHAT_QR',
+    sourcePage: props.sourcePage,
+    refType: 'ASSET',
+    refId: visibleAsset?.id || null,
+    metadata: { sourcePage: props.sourcePage }
+  }).catch(() => undefined)
+}
 
 watch(
   () => props.visible,
@@ -27,14 +66,7 @@ watch(
     if (!visible) {
       return
     }
-    imageFailed.value = false
-    api.event({
-      eventType: 'VIEW_WECHAT_QR',
-      sourcePage: props.sourcePage,
-      refType: 'ASSET',
-      refId: props.asset?.id || null,
-      metadata: { sourcePage: props.sourcePage }
-    }).catch(() => undefined)
+    handleOpen()
   }
 )
 </script>
@@ -45,10 +77,10 @@ watch(
       <view class="modal-title">扫码添加顾问</view>
       <view class="modal-subtitle">获取免费初评回访</view>
       <image
-        v-if="asset?.fileUrl && !imageFailed"
+        v-if="effectiveAsset?.fileUrl && !imageFailed"
         class="qr-image"
         mode="aspectFit"
-        :src="resolveFileUrl(asset.fileUrl)"
+        :src="resolveFileUrl(effectiveAsset.fileUrl)"
         @error="imageFailed = true"
       />
       <view v-else class="qr-placeholder">{{ placeholderText }}</view>
