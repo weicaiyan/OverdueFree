@@ -1004,6 +1004,9 @@ async function loadLeads() {
 }
 
 function searchLeads() {
+  if (!validateLeadFilters()) {
+    return
+  }
   leadFilters.page = 1
   loadLeads()
 }
@@ -1027,6 +1030,9 @@ async function handleExportLeads() {
     ElMessage.warning('请至少选择一个导出字段')
     return
   }
+  if (!validateLeadFilters()) {
+    return
+  }
   exportingLeads.value = true
   try {
     const result = await adminApi.exportLeads({
@@ -1040,6 +1046,20 @@ async function handleExportLeads() {
   } finally {
     exportingLeads.value = false
   }
+}
+
+function validateLeadFilters() {
+  const minAmount = leadFilters.minDebtAmount === '' ? null : Number(leadFilters.minDebtAmount)
+  const maxAmount = leadFilters.maxDebtAmount === '' ? null : Number(leadFilters.maxDebtAmount)
+  if (minAmount !== null && maxAmount !== null && minAmount > maxAmount) {
+    ElMessage.warning('最低金额不能大于最高金额')
+    return false
+  }
+  if (leadFilters.startTime && leadFilters.endTime && leadFilters.startTime > leadFilters.endTime) {
+    ElMessage.warning('开始时间不能晚于结束时间')
+    return false
+  }
+  return true
 }
 
 async function openLeadHistory(row: LeadListItem) {
