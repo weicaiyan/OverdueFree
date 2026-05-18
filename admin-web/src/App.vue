@@ -1052,6 +1052,11 @@ async function handleExportLeads() {
 function validateLeadFilters() {
   const minAmount = leadFilters.minDebtAmount === '' ? null : Number(leadFilters.minDebtAmount)
   const maxAmount = leadFilters.maxDebtAmount === '' ? null : Number(leadFilters.maxDebtAmount)
+  if ((minAmount !== null && (!Number.isFinite(minAmount) || minAmount < 0))
+    || (maxAmount !== null && (!Number.isFinite(maxAmount) || maxAmount < 0))) {
+    ElMessage.warning('金额筛选请输入非负数字')
+    return false
+  }
   if (minAmount !== null && maxAmount !== null && minAmount > maxAmount) {
     ElMessage.warning('最低金额不能大于最高金额')
     return false
