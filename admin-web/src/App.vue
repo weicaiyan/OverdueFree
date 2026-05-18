@@ -1023,6 +1023,10 @@ function resetLeadFilters() {
 }
 
 async function handleExportLeads() {
+  if (!exportFields.value.length) {
+    ElMessage.warning('请至少选择一个导出字段')
+    return
+  }
   exportingLeads.value = true
   try {
     const result = await adminApi.exportLeads({
