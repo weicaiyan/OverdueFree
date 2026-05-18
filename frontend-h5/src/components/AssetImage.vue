@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { AssetResource } from '../types'
 import { resolveFileUrl } from '../services/api'
 
@@ -11,6 +11,22 @@ const props = defineProps<{
 }>()
 
 const imageFailed = ref(false)
+const imageFilePattern = /\.(jpg|jpeg|png|webp|gif|bmp|svg)(\?.*)?$/i
+const videoFilePattern = /\.(mp4|mov|m4v|webm)(\?.*)?$/i
+const canRenderImage = computed(() => {
+  const asset = props.asset
+  if (!asset?.fileUrl) {
+    return false
+  }
+  if (asset.mimeType) {
+    return asset.mimeType.startsWith('image/')
+  }
+  if (videoFilePattern.test(asset.fileUrl)) {
+    return false
+  }
+  return imageFilePattern.test(asset.fileUrl)
+})
+const assetImageUrl = computed(() => (canRenderImage.value ? resolveFileUrl(props.asset?.fileUrl) : ''))
 
 watch(
   () => props.asset?.fileUrl,
@@ -23,10 +39,10 @@ watch(
 <template>
   <view class="asset-box" :class="tone || 'blue'">
     <image
-      v-if="asset?.fileUrl && !imageFailed"
+      v-if="canRenderImage && !imageFailed"
       class="asset-image"
       mode="aspectFill"
-      :src="resolveFileUrl(asset.fileUrl)"
+      :src="assetImageUrl"
       @error="imageFailed = true"
     />
     <view v-else class="asset-placeholder">
