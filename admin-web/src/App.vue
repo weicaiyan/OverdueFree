@@ -788,6 +788,7 @@ const availableExportFields = [
   { value: 'viewedWechatQr', label: '企微查看' },
   { value: 'lastWechatQrViewAt', label: '最近查看企微时间' },
   { value: 'latestEventType', label: '最近行为' },
+  { value: 'latestEventAt', label: '最近行为时间' },
   { value: 'historyCount', label: '历史条数' }
 ]
 const exportFields = ref(availableExportFields.map((field) => field.value))
