@@ -121,10 +121,12 @@ public class LeadExportServiceImpl implements LeadExportService {
 
     private void writeExcel(HttpServletResponse response, List<LeadExportField> fields, List<LeadListItem> rows) {
         String fileName = "线索导出-" + LocalDate.now().format(DATE_FORMATTER) + ".xlsx";
+        String fallbackFileName = "leads-export-" + LocalDate.now().format(DATE_FORMATTER) + ".xlsx";
         String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8).replace("+", "%20");
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        response.setHeader("Content-Disposition", "attachment; filename*=UTF-8''" + encodedFileName);
+        response.setHeader("Content-Disposition", "attachment; filename=\"" + fallbackFileName
+            + "\"; filename*=UTF-8''" + encodedFileName);
         try {
             EasyExcel.write(response.getOutputStream())
                 .head(buildHead(fields))
