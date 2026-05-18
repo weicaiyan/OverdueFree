@@ -297,12 +297,24 @@ async function exportBlob(path: string, payload: unknown): Promise<ExportBlobRes
   }
 
   const disposition = response.headers.get('Content-Disposition') || ''
-  const match = disposition.match(/filename\*=UTF-8''([^;]+)/)
-  const filename = match ? decodeURIComponent(match[1]) : '线索导出.xlsx'
+  const filename = resolveDownloadFilename(disposition, '线索导出.xlsx')
   return {
     blob: await response.blob(),
     filename
   }
+}
+
+function resolveDownloadFilename(disposition: string, fallback: string) {
+  const encodedMatch = disposition.match(/filename\*=UTF-8''([^;]+)/i)
+  if (encodedMatch) {
+    try {
+      return decodeURIComponent(encodedMatch[1].trim())
+    } catch {
+      return fallback
+    }
+  }
+  const fallbackMatch = disposition.match(/filename="?([^";]+)"?/i)
+  return fallbackMatch?.[1]?.trim() || fallback
 }
 
 async function uploadFile(file: File, category: 'IMAGE' | 'VIDEO') {
