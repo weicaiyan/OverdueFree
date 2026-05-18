@@ -30,6 +30,7 @@ public class FileUploadServiceImpl implements FileUploadService {
     private static final DateTimeFormatter DATE_PATH_FORMATTER = DateTimeFormatter.ofPattern("yyyy/MM/dd");
     private static final List<String> IMAGE_EXTENSIONS = Arrays.asList("jpg", "jpeg", "png", "webp");
     private static final List<String> IMAGE_MIME_TYPES = Arrays.asList("image/jpeg", "image/png", "image/webp");
+    private static final List<String> VIDEO_MIME_TYPES = Arrays.asList("video/mp4", "application/octet-stream");
 
     private final UploadProperties uploadProperties;
 
@@ -105,7 +106,7 @@ public class FileUploadServiceImpl implements FileUploadService {
             }
             return;
         }
-        if (!"mp4".equals(extension) || !"video/mp4".equals(mimeType)) {
+        if (!"mp4".equals(extension) || !VIDEO_MIME_TYPES.contains(mimeType)) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "视频仅支持 mp4");
         }
         if (fileSize > VIDEO_MAX_SIZE) {
